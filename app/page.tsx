@@ -25,7 +25,7 @@ export default function Home() {
               </div>
               <span className="font-semibold text-lg">Questionnaire Audit</span>
             </div>
-            <Link href="/upload" className="btn btn-primary btn-sm">
+            <Link href="/masters/upload" className="btn btn-primary btn-sm">
               Get Started
             </Link>
           </div>
@@ -44,7 +44,7 @@ export default function Home() {
               No accounts needed - just share a link.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/upload" className="btn btn-primary btn-lg">
+              <Link href="/masters/upload" className="btn btn-primary btn-lg">
                 <svg
                   className="w-5 h-5 mr-2"
                   fill="none"
@@ -58,7 +58,23 @@ export default function Home() {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Create New Project
+                Upload Master Questionnaire
+              </Link>
+              <Link href="/upload" className="btn btn-outline btn-lg">
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+                Single Project (Legacy)
               </Link>
             </div>
           </div>
@@ -239,10 +255,10 @@ export default function Home() {
           <div className="max-w-xl mx-auto text-center">
             <h2 className="text-2xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-base-content/60 mb-6">
-              Upload your questionnaire CSV and start collecting feedback in minutes.
+              Upload your master questionnaire and share instances with multiple trusts.
             </p>
-            <Link href="/upload" className="btn btn-primary">
-              Create Your First Project
+            <Link href="/masters/upload" className="btn btn-primary">
+              Upload Master Questionnaire
             </Link>
           </div>
         </section>

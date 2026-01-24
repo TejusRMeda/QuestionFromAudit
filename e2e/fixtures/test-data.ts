@@ -52,7 +52,16 @@ export const mockProjectData = {
 };
 
 // Mock suggestions for a question
-export const mockSuggestions = [
+export const mockSuggestions: Array<{
+  id: number;
+  submitterName: string;
+  submitterEmail: string | null;
+  suggestionText: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  responseMessage: string | null;
+}> = [
   {
     id: 1,
     submitterName: "Dr. Smith",
