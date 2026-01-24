@@ -1,0 +1,3 @@
+Question_ID,Category,Question_Text,Answer_Type,Answer_Options
+Q001,Demographics,What is your age range?,radio,Under 18|18-30|31-50|Over 50
+Q001,Demographics,What is your gender?,radio,Male|Female|Non-binary
