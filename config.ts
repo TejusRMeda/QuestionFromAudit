@@ -2,12 +2,12 @@ import { ConfigProps } from "./types/config";
 
 const config = {
   // REQUIRED
-  appName: "PromptSpark",
+  appName: "Questionaire Audit",
   // REQUIRED: a short description of your app for SEO tags (can be overwritten)
   appDescription:
-    "Turn any YouTube video into engaging discussion prompts for your audience.",
+    "Audit your questionaire in seconds.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
-  domainName: "promptspark.app",
+  domainName: "questionaireaudit.com",
   crisp: {
     // Crisp website ID. IF YOU DON'T USE CRISP: just remove this => Then add a support email in this config file (resend.supportEmail) otherwise customer support won't work.
     id: "",
