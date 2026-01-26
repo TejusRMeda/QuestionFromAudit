@@ -21,6 +21,9 @@ const nextConfig = {
       },
     ],
   },
+  // Turbopack config (Next.js 16 default)
+  turbopack: {},
+  // Webpack config kept for backwards compatibility (used when --webpack flag is passed)
   webpack: (config, { webpack, isServer }) => {
     // Ignore MongoDB's optional dependencies to prevent build warnings
     if (isServer) {
