@@ -1,473 +1,551 @@
 import { describe, it, expect } from "vitest";
+import {
+  MyPreOpCsvRow,
+  ParsedQuestion,
+  MYPREOP_ITEM_TYPES,
+  ITEM_TYPES_REQUIRING_OPTIONS,
+  ITEM_TYPES_NO_OPTIONS,
+  groupRowsByQuestion,
+  rowsToQuestion,
+  parseEnableWhen,
+  MyPreOpItemType,
+} from "@/types/question";
 
-// Types matching the upload page
-interface ParsedQuestion {
-  Question_ID: string;
-  Category: string;
-  Question_Text: string;
-  Answer_Type: string;
-  Answer_Options: string;
-}
-
-interface ValidationResult {
+// Validation function extracted from upload page for testing
+function validateQuestions(rows: MyPreOpCsvRow[]): {
   questions: ParsedQuestion[];
   warnings: string[];
-}
+} {
+  const groupedRows = groupRowsByQuestion(rows);
 
-const VALID_ANSWER_TYPES = ["text", "radio", "multi_select"];
+  if (groupedRows.size === 0) {
+    throw new Error("No valid questions found in CSV");
+  }
 
-// Extracted validation logic from upload page for testing
-function validateQuestions(questions: ParsedQuestion[]): ValidationResult {
+  if (groupedRows.size > 500) {
+    throw new Error("CSV file exceeds maximum of 500 questions");
+  }
+
   const warnings: string[] = [];
-  const questionIds = new Set<string>();
-  const categoryCounts: Record<string, number> = {};
+  const questions: ParsedQuestion[] = [];
+  const sectionCounts: Record<string, number> = {};
 
-  for (let i = 0; i < questions.length; i++) {
-    const q = questions[i];
-    const rowNum = i + 2; // Account for header row
+  for (const [id, questionRows] of groupedRows) {
+    const question = rowsToQuestion(questionRows);
 
-    // Required field validations
-    if (!q.Question_ID?.trim()) {
-      throw new Error(`Row ${rowNum}: Question_ID is empty`);
+    // Validate Id
+    if (!question.id) {
+      throw new Error(`Question has empty Id`);
     }
-    if (!q.Category?.trim()) {
-      throw new Error(`Row ${rowNum}: Category is empty`);
-    }
-    if (!q.Question_Text?.trim()) {
-      throw new Error(`Row ${rowNum}: Question_Text is empty`);
-    }
-    if (q.Question_Text.length > 1000) {
-      throw new Error(`Row ${rowNum}: Question_Text exceeds 1000 character limit`);
-    }
-    if (questionIds.has(q.Question_ID)) {
-      throw new Error(`Duplicate Question_ID found: ${q.Question_ID}`);
-    }
-    questionIds.add(q.Question_ID);
 
-    // Track category counts for warnings
-    categoryCounts[q.Category] = (categoryCounts[q.Category] || 0) + 1;
-
-    // Answer_Type validation
-    const answerType = q.Answer_Type?.trim().toLowerCase();
-    if (!answerType) {
-      throw new Error(`Row ${rowNum}: Answer_Type is required`);
+    // Validate Section
+    if (!question.section) {
+      throw new Error(`Question ${question.id}: Section is empty`);
     }
-    if (!VALID_ANSWER_TYPES.includes(answerType)) {
+
+    sectionCounts[question.section] =
+      (sectionCounts[question.section] || 0) + 1;
+
+    // Validate ItemType
+    const itemType = question.itemType as MyPreOpItemType;
+    if (!itemType) {
+      throw new Error(`Question ${question.id}: ItemType is required`);
+    }
+    if (!MYPREOP_ITEM_TYPES.includes(itemType)) {
       throw new Error(
-        `Row ${rowNum}: Answer_Type must be one of: text, radio, multi_select (got "${q.Answer_Type}")`
+        `Question ${question.id}: ItemType must be one of: ${MYPREOP_ITEM_TYPES.join(", ")} (got "${question.itemType}")`
       );
     }
 
-    // Normalize Answer_Type to lowercase
-    q.Answer_Type = answerType;
-
-    // Answer_Options validation
-    const answerOptions = q.Answer_Options?.trim() || "";
-
-    if (answerType === "text") {
-      if (answerOptions) {
+    // Validate options based on item type
+    if (ITEM_TYPES_REQUIRING_OPTIONS.includes(itemType)) {
+      if (question.options.length < 2) {
         throw new Error(
-          `Row ${rowNum}: Answer_Options must be empty for "text" type questions`
+          `Question ${question.id}: ${itemType} type requires at least 2 options (found ${question.options.length})`
         );
       }
-    } else {
-      if (!answerOptions) {
-        throw new Error(
-          `Row ${rowNum}: Answer_Options is required for "${answerType}" type questions`
-        );
-      }
-
-      const options = answerOptions.split("|").map((o) => o.trim()).filter(Boolean);
-
-      if (options.length < 2) {
-        throw new Error(
-          `Row ${rowNum}: Answer_Options must have at least 2 options for "${answerType}" type (found ${options.length})`
-        );
-      }
-
-      // Warnings (non-blocking)
-      if (options.length > 20) {
+    } else if (ITEM_TYPES_NO_OPTIONS.includes(itemType)) {
+      if (question.options.length > 0) {
         warnings.push(
-          `Row ${rowNum} (${q.Question_ID}): More than 20 options may affect usability`
+          `Question ${question.id}: ${itemType} type typically has no options`
         );
       }
-
-      options.forEach((opt, idx) => {
-        if (opt.length > 100) {
-          warnings.push(
-            `Row ${rowNum} (${q.Question_ID}): Option ${idx + 1} exceeds 100 characters`
-          );
-        }
-      });
     }
+
+    // Validate helper fields
+    if (question.hasHelper) {
+      if (!question.helperType) {
+        warnings.push(
+          `Question ${question.id}: HasHelper is TRUE but HelperType is empty`
+        );
+      }
+      if (!question.helperValue) {
+        warnings.push(
+          `Question ${question.id}: HasHelper is TRUE but HelperValue is empty`
+        );
+      }
+    }
+
+    // Validate Question text length
+    if (question.questionText.length > 1000) {
+      throw new Error(
+        `Question ${question.id}: Question text exceeds 1000 character limit`
+      );
+    }
+
+    // Warnings for many options
+    if (question.options.length > 20) {
+      warnings.push(
+        `Question ${question.id}: More than 20 options may affect usability`
+      );
+    }
+
+    // Warnings for long options
+    question.options.forEach((opt, idx) => {
+      if (opt.value.length > 100) {
+        warnings.push(
+          `Question ${question.id}: Option ${idx + 1} exceeds 100 characters`
+        );
+      }
+    });
+
+    questions.push(question);
   }
 
-  // Check for single-question categories (warning only)
-  Object.entries(categoryCounts).forEach(([cat, count]) => {
+  // Check for single-question sections
+  Object.entries(sectionCounts).forEach(([section, count]) => {
     if (count === 1) {
-      warnings.push(`Category "${cat}" has only 1 question`);
+      warnings.push(`Section "${section}" has only 1 question`);
     }
   });
 
   return { questions, warnings };
 }
 
-function validateQuestionCount(questions: ParsedQuestion[]): void {
-  if (questions.length === 0) {
-    throw new Error("CSV file contains no data rows");
-  }
-  if (questions.length > 500) {
-    throw new Error("CSV file exceeds maximum of 500 questions");
-  }
+// Helper to create a CSV row
+function createRow(overrides: Partial<MyPreOpCsvRow> = {}): MyPreOpCsvRow {
+  return {
+    Id: "Q001",
+    Section: "Who I Am",
+    Page: "Personal Details",
+    ItemType: "radio",
+    Question: "Test question?",
+    Option: "Yes",
+    Characteristic: "test_char",
+    Required: "TRUE",
+    EnableWhen: "",
+    HasHelper: "FALSE",
+    HelperType: "",
+    HelperName: "",
+    HelperValue: "",
+    ...overrides,
+  };
 }
 
-describe("CSV Validation", () => {
-  describe("question count validation", () => {
-    it("should reject empty questions array", () => {
-      expect(() => validateQuestionCount([])).toThrow("CSV file contains no data rows");
+describe("MyPreOp CSV Validation", () => {
+  describe("row grouping", () => {
+    it("should group rows by Id", () => {
+      const rows: MyPreOpCsvRow[] = [
+        createRow({ Id: "Q001", Option: "Male", Characteristic: "is_male" }),
+        createRow({ Id: "Q001", Option: "Female", Characteristic: "is_female" }),
+        createRow({ Id: "Q002", Option: "Yes", Characteristic: "yes" }),
+        createRow({ Id: "Q002", Option: "No", Characteristic: "no" }),
+      ];
+
+      const groups = groupRowsByQuestion(rows);
+
+      expect(groups.size).toBe(2);
+      expect(groups.get("Q001")).toHaveLength(2);
+      expect(groups.get("Q002")).toHaveLength(2);
     });
 
-    it("should reject more than 500 questions", () => {
-      const questions = Array.from({ length: 501 }, (_, i) => ({
-        Question_ID: `Q${i}`,
-        Category: "Test",
-        Question_Text: "Test question",
-        Answer_Type: "text",
-        Answer_Options: "",
-      }));
-      expect(() => validateQuestionCount(questions)).toThrow(
-        "CSV file exceeds maximum of 500 questions"
-      );
-    });
+    it("should skip rows with empty Id", () => {
+      const rows: MyPreOpCsvRow[] = [
+        createRow({ Id: "Q001", Option: "Yes" }),
+        createRow({ Id: "", Option: "No" }),
+        createRow({ Id: "  ", Option: "Maybe" }),
+      ];
 
-    it("should accept valid question count", () => {
-      const questions = Array.from({ length: 100 }, (_, i) => ({
-        Question_ID: `Q${i}`,
-        Category: "Test",
-        Question_Text: "Test question",
-        Answer_Type: "text",
-        Answer_Options: "",
-      }));
-      expect(() => validateQuestionCount(questions)).not.toThrow();
+      const groups = groupRowsByQuestion(rows);
+
+      expect(groups.size).toBe(1);
+      expect(groups.get("Q001")).toHaveLength(1);
     });
   });
 
-  describe("required fields validation", () => {
-    it("should reject empty Question_ID", () => {
-      const questions = [
-        {
-          Question_ID: "",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
+  describe("rowsToQuestion conversion", () => {
+    it("should aggregate options from multiple rows", () => {
+      const rows: MyPreOpCsvRow[] = [
+        createRow({ Option: "Male", Characteristic: "is_male" }),
+        createRow({ Option: "Female", Characteristic: "is_female" }),
+        createRow({ Option: "Other", Characteristic: "is_other" }),
       ];
-      expect(() => validateQuestions(questions)).toThrow("Question_ID is empty");
-    });
 
-    it("should reject empty Category", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "",
-          Question_Text: "Test question",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
-      ];
-      expect(() => validateQuestions(questions)).toThrow("Category is empty");
-    });
+      const question = rowsToQuestion(rows);
 
-    it("should reject empty Question_Text", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
-      ];
-      expect(() => validateQuestions(questions)).toThrow("Question_Text is empty");
-    });
-
-    it("should reject Question_Text over 1000 characters", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "a".repeat(1001),
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
-      ];
-      expect(() => validateQuestions(questions)).toThrow(
-        "Question_Text exceeds 1000 character limit"
-      );
-    });
-  });
-
-  describe("duplicate detection", () => {
-    it("should reject duplicate Question_IDs", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "First question",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Second question",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
-      ];
-      expect(() => validateQuestions(questions)).toThrow(
-        "Duplicate Question_ID found: Q001"
-      );
-    });
-  });
-
-  describe("answer type validation", () => {
-    it("should reject missing Answer_Type", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "",
-          Answer_Options: "",
-        },
-      ];
-      expect(() => validateQuestions(questions)).toThrow("Answer_Type is required");
-    });
-
-    it("should reject invalid Answer_Type", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "dropdown",
-          Answer_Options: "A|B",
-        },
-      ];
-      expect(() => validateQuestions(questions)).toThrow(
-        'Answer_Type must be one of: text, radio, multi_select (got "dropdown")'
-      );
-    });
-
-    it("should accept valid answer types", () => {
-      VALID_ANSWER_TYPES.forEach((type) => {
-        const questions = [
-          {
-            Question_ID: "Q001",
-            Category: "Test",
-            Question_Text: "Test question",
-            Answer_Type: type,
-            Answer_Options: type === "text" ? "" : "Option A|Option B",
-          },
-        ];
-        expect(() => validateQuestions(questions)).not.toThrow();
+      expect(question.options).toHaveLength(3);
+      expect(question.options[0]).toEqual({
+        value: "Male",
+        characteristic: "is_male",
+      });
+      expect(question.options[1]).toEqual({
+        value: "Female",
+        characteristic: "is_female",
       });
     });
 
-    it("should normalize Answer_Type to lowercase", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "RADIO",
-          Answer_Options: "A|B",
-        },
-      ];
-      const result = validateQuestions(questions);
-      expect(result.questions[0].Answer_Type).toBe("radio");
+    it("should parse boolean fields correctly", () => {
+      const rows = [createRow({ Required: "TRUE", HasHelper: "FALSE" })];
+      const question = rowsToQuestion(rows);
+
+      expect(question.required).toBe(true);
+      expect(question.hasHelper).toBe(false);
+    });
+
+    it("should handle case-insensitive boolean parsing", () => {
+      const rows = [createRow({ Required: "true", HasHelper: "false" })];
+      const question = rowsToQuestion(rows);
+
+      expect(question.required).toBe(true);
+      expect(question.hasHelper).toBe(false);
+    });
+
+    it("should normalize ItemType to lowercase", () => {
+      const rows = [createRow({ ItemType: "RADIO" })];
+      const question = rowsToQuestion(rows);
+
+      expect(question.itemType).toBe("radio");
+    });
+
+    it("should handle empty options for text types", () => {
+      const rows = [createRow({ ItemType: "text-field", Option: "" })];
+      const question = rowsToQuestion(rows);
+
+      expect(question.options).toHaveLength(0);
     });
   });
 
-  describe("answer options validation", () => {
-    it("should reject non-empty Answer_Options for text type", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "text",
-          Answer_Options: "Some options",
-        },
+  describe("EnableWhen parsing", () => {
+    it("should parse simple condition", () => {
+      const result = parseEnableWhen("(patient_has_preferred_name=true)");
+
+      expect(result).not.toBeNull();
+      expect(result!.conditions).toHaveLength(1);
+      expect(result!.conditions[0]).toEqual({
+        characteristic: "patient_has_preferred_name",
+        operator: "=",
+        value: "true",
+      });
+    });
+
+    it("should parse AND conditions", () => {
+      const result = parseEnableWhen(
+        "(patient_age<16) AND(patient_ageexistsnull)"
+      );
+
+      expect(result).not.toBeNull();
+      expect(result!.logic).toBe("AND");
+      expect(result!.conditions.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("should parse OR conditions", () => {
+      const result = parseEnableWhen(
+        "(patient_has_ethnicity-black_african_caribbean=true) OR(patient_has_ethnicity-prefer_not_to_disclose=true)"
+      );
+
+      expect(result).not.toBeNull();
+      expect(result!.logic).toBe("OR");
+      expect(result!.conditions.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("should return null for empty string", () => {
+      expect(parseEnableWhen("")).toBeNull();
+      expect(parseEnableWhen("   ")).toBeNull();
+    });
+
+    it("should parse less than operator", () => {
+      const result = parseEnableWhen("(patient_age<16)");
+
+      expect(result).not.toBeNull();
+      expect(result!.conditions[0].operator).toBe("<");
+      expect(result!.conditions[0].value).toBe("16");
+    });
+  });
+
+  describe("question validation", () => {
+    it("should reject empty questions array", () => {
+      expect(() => validateQuestions([])).toThrow("No valid questions found");
+    });
+
+    it("should reject empty Section", () => {
+      const rows = [createRow({ Section: "" })];
+      expect(() => validateQuestions(rows)).toThrow("Section is empty");
+    });
+
+    it("should reject invalid ItemType", () => {
+      const rows = [
+        createRow({ ItemType: "dropdown", Option: "A" }),
+        createRow({ Id: "Q001", ItemType: "dropdown", Option: "B" }),
       ];
-      expect(() => validateQuestions(questions)).toThrow(
-        'Answer_Options must be empty for "text" type questions'
+      expect(() => validateQuestions(rows)).toThrow("ItemType must be one of");
+    });
+
+    it("should accept all valid item types", () => {
+      for (const itemType of MYPREOP_ITEM_TYPES) {
+        const rows =
+          itemType === "radio" || itemType === "checkbox"
+            ? [
+                createRow({ ItemType: itemType, Option: "A", Characteristic: "a" }),
+                createRow({ Id: "Q001", ItemType: itemType, Option: "B", Characteristic: "b" }),
+              ]
+            : [createRow({ ItemType: itemType, Option: "" })];
+
+        expect(() => validateQuestions(rows)).not.toThrow();
+      }
+    });
+
+    it("should reject radio type with fewer than 2 options", () => {
+      const rows = [createRow({ ItemType: "radio", Option: "Only one" })];
+      expect(() => validateQuestions(rows)).toThrow(
+        "requires at least 2 options"
       );
     });
 
-    it("should reject missing Answer_Options for radio type", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "radio",
-          Answer_Options: "",
-        },
-      ];
-      expect(() => validateQuestions(questions)).toThrow(
-        'Answer_Options is required for "radio" type questions'
+    it("should reject checkbox type with fewer than 2 options", () => {
+      const rows = [createRow({ ItemType: "checkbox", Option: "Only one" })];
+      expect(() => validateQuestions(rows)).toThrow(
+        "requires at least 2 options"
       );
     });
 
-    it("should reject fewer than 2 options for radio type", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "radio",
-          Answer_Options: "Only one option",
-        },
+    it("should accept text types with no options", () => {
+      const textTypes = [
+        "text-field",
+        "text-area",
+        "text-paragraph",
+        "phone-number",
+        "age",
+        "number-input",
+        "allergy-list",
       ];
-      expect(() => validateQuestions(questions)).toThrow(
-        'Answer_Options must have at least 2 options for "radio" type'
-      );
+
+      for (const itemType of textTypes) {
+        const rows = [createRow({ ItemType: itemType, Option: "" })];
+        expect(() => validateQuestions(rows)).not.toThrow();
+      }
     });
 
-    it("should reject fewer than 2 options for multi_select type", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "multi_select",
-          Answer_Options: "Single",
-        },
+    it("should reject question text over 1000 characters", () => {
+      const rows = [
+        createRow({
+          Question: "a".repeat(1001),
+          ItemType: "text-field",
+          Option: "",
+        }),
       ];
-      expect(() => validateQuestions(questions)).toThrow(
-        'Answer_Options must have at least 2 options for "multi_select" type'
+      expect(() => validateQuestions(rows)).toThrow(
+        "exceeds 1000 character limit"
       );
-    });
-
-    it("should accept 2+ options for radio type", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "radio",
-          Answer_Options: "Yes|No",
-        },
-      ];
-      expect(() => validateQuestions(questions)).not.toThrow();
     });
   });
 
   describe("warnings (non-blocking)", () => {
     it("should warn about more than 20 options", () => {
-      const manyOptions = Array.from({ length: 25 }, (_, i) => `Option ${i}`).join("|");
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "radio",
-          Answer_Options: manyOptions,
-        },
-      ];
-      const result = validateQuestions(questions);
+      const rows: MyPreOpCsvRow[] = [];
+      for (let i = 0; i < 25; i++) {
+        rows.push(
+          createRow({
+            Id: "Q001",
+            ItemType: "radio",
+            Option: `Option ${i}`,
+            Characteristic: `char_${i}`,
+          })
+        );
+      }
+
+      const result = validateQuestions(rows);
       expect(result.warnings).toContainEqual(
         expect.stringContaining("More than 20 options")
       );
     });
 
     it("should warn about options exceeding 100 characters", () => {
-      const longOption = "a".repeat(101);
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Test",
-          Question_Text: "Test question",
-          Answer_Type: "radio",
-          Answer_Options: `${longOption}|Short option`,
-        },
+      const rows = [
+        createRow({ Option: "a".repeat(101), Characteristic: "long" }),
+        createRow({ Id: "Q001", Option: "Short", Characteristic: "short" }),
       ];
-      const result = validateQuestions(questions);
+
+      const result = validateQuestions(rows);
       expect(result.warnings).toContainEqual(
         expect.stringContaining("exceeds 100 characters")
       );
     });
 
-    it("should warn about single-question categories", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Lonely Category",
-          Question_Text: "Test question",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
-        {
-          Question_ID: "Q002",
-          Category: "Full Category",
-          Question_Text: "Test question 2",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
-        {
-          Question_ID: "Q003",
-          Category: "Full Category",
-          Question_Text: "Test question 3",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
+    it("should warn about single-question sections", () => {
+      const rows = [
+        createRow({
+          Section: "Lonely Section",
+          ItemType: "text-field",
+          Option: "",
+        }),
       ];
-      const result = validateQuestions(questions);
+
+      const result = validateQuestions(rows);
       expect(result.warnings).toContainEqual(
-        expect.stringContaining('Category "Lonely Category" has only 1 question')
+        expect.stringContaining('Section "Lonely Section" has only 1 question')
+      );
+    });
+
+    it("should warn when HasHelper is TRUE but HelperType is empty", () => {
+      const rows = [
+        createRow({
+          HasHelper: "TRUE",
+          HelperType: "",
+          HelperValue: "some value",
+          ItemType: "text-field",
+          Option: "",
+        }),
+      ];
+
+      const result = validateQuestions(rows);
+      expect(result.warnings).toContainEqual(
+        expect.stringContaining("HasHelper is TRUE but HelperType is empty")
+      );
+    });
+
+    it("should warn when HasHelper is TRUE but HelperValue is empty", () => {
+      const rows = [
+        createRow({
+          HasHelper: "TRUE",
+          HelperType: "contentBlock",
+          HelperValue: "",
+          ItemType: "text-field",
+          Option: "",
+        }),
+      ];
+
+      const result = validateQuestions(rows);
+      expect(result.warnings).toContainEqual(
+        expect.stringContaining("HasHelper is TRUE but HelperValue is empty")
       );
     });
   });
 
-  describe("valid CSV data", () => {
+  describe("valid MyPreOp CSV data", () => {
     it("should validate a complete valid CSV", () => {
-      const questions = [
-        {
-          Question_ID: "Q001",
-          Category: "Demographics",
-          Question_Text: "What is your age?",
-          Answer_Type: "radio",
-          Answer_Options: "Under 18|18-30|31-50|Over 50",
-        },
-        {
-          Question_ID: "Q002",
-          Category: "Demographics",
-          Question_Text: "What is your gender?",
-          Answer_Type: "radio",
-          Answer_Options: "Male|Female|Other|Prefer not to say",
-        },
-        {
-          Question_ID: "Q003",
-          Category: "Health",
-          Question_Text: "Do you have any allergies?",
-          Answer_Type: "multi_select",
-          Answer_Options: "Peanuts|Dairy|Gluten|None",
-        },
-        {
-          Question_ID: "Q004",
-          Category: "Health",
-          Question_Text: "Additional comments?",
-          Answer_Type: "text",
-          Answer_Options: "",
-        },
+      const rows: MyPreOpCsvRow[] = [
+        // Radio question with 2 options
+        createRow({
+          Id: "Q001",
+          Section: "Who I Am",
+          Page: "Personal Details",
+          ItemType: "radio",
+          Question: "Select your gender",
+          Option: "Male",
+          Characteristic: "patient_is_male",
+          Required: "TRUE",
+        }),
+        createRow({
+          Id: "Q001",
+          Section: "Who I Am",
+          Page: "Personal Details",
+          ItemType: "radio",
+          Question: "Select your gender",
+          Option: "Female",
+          Characteristic: "patient_is_female",
+          Required: "TRUE",
+        }),
+        // Checkbox with multiple options
+        createRow({
+          Id: "Q002",
+          Section: "Who I Am",
+          Page: "Status",
+          ItemType: "checkbox",
+          Question: "Select your preferences",
+          Option: "Option A",
+          Characteristic: "pref_a",
+          Required: "FALSE",
+        }),
+        createRow({
+          Id: "Q002",
+          Section: "Who I Am",
+          Page: "Status",
+          ItemType: "checkbox",
+          Question: "Select your preferences",
+          Option: "Option B",
+          Characteristic: "pref_b",
+          Required: "FALSE",
+        }),
+        // Text field
+        createRow({
+          Id: "Q003",
+          Section: "Who I Am",
+          Page: "Contact",
+          ItemType: "text-field",
+          Question: "Enter your name",
+          Option: "",
+          Characteristic: "patient_name",
+          Required: "TRUE",
+          EnableWhen: "(patient_is_male=true)",
+        }),
+        // Text area
+        createRow({
+          Id: "Q004",
+          Section: "Who I Am",
+          Page: "Contact",
+          ItemType: "text-area",
+          Question: "Additional comments",
+          Option: "",
+          Characteristic: "comments",
+          Required: "FALSE",
+        }),
       ];
 
-      const result = validateQuestions(questions);
+      const result = validateQuestions(rows);
+
       expect(result.questions).toHaveLength(4);
-      expect(result.warnings).toHaveLength(0);
+      expect(result.questions[0].options).toHaveLength(2);
+      expect(result.questions[1].options).toHaveLength(2);
+      expect(result.questions[2].options).toHaveLength(0);
+      expect(result.questions[3].options).toHaveLength(0);
+    });
+
+    it("should handle question with helper content", () => {
+      const rows = [
+        createRow({
+          Id: "Q001",
+          ItemType: "text-field",
+          Option: "",
+          HasHelper: "TRUE",
+          HelperType: "contentBlock",
+          HelperName: "Help Title",
+          HelperValue: "<p>Some help content</p>",
+        }),
+      ];
+
+      const result = validateQuestions(rows);
+
+      expect(result.questions[0].hasHelper).toBe(true);
+      expect(result.questions[0].helperType).toBe("contentBlock");
+      expect(result.questions[0].helperName).toBe("Help Title");
+      expect(result.questions[0].helperValue).toBe("<p>Some help content</p>");
+      expect(result.warnings).toHaveLength(1); // Single section warning
+    });
+
+    it("should handle conditional EnableWhen", () => {
+      const rows = [
+        createRow({
+          Id: "Q001",
+          ItemType: "text-field",
+          Option: "",
+          EnableWhen: "(patient_has_preferred_name=true)",
+        }),
+      ];
+
+      const result = validateQuestions(rows);
+
+      expect(result.questions[0].enableWhen).not.toBeNull();
+      expect(result.questions[0].enableWhen!.conditions).toHaveLength(1);
     });
   });
 });

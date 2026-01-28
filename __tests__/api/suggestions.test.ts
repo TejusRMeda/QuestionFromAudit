@@ -121,7 +121,7 @@ describe("Suggestions API Validation", () => {
 
     describe("submitterEmail validation", () => {
       it("should accept missing email (optional)", () => {
-        const payload = { ...validPayload, submitterEmail: undefined };
+        const payload: SuggestionPayload = { ...validPayload, submitterEmail: undefined };
         expect(() => validateSuggestionPayload(payload)).not.toThrow();
       });
 
@@ -208,7 +208,7 @@ describe("Suggestions API Validation", () => {
       });
 
       it("should validate suggestion without optional email", () => {
-        const payload = { ...validPayload, submitterEmail: undefined };
+        const payload: SuggestionPayload = { ...validPayload, submitterEmail: undefined };
         expect(() => validateSuggestionPayload(payload)).not.toThrow();
       });
     });
