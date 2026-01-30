@@ -10,6 +10,7 @@ export const mockProjectData = {
       questionText: "What is your age range?",
       answerType: "radio",
       answerOptions: "Under 18|18-30|31-50|Over 50",
+      characteristic: "age_under_18|age_18_30|age_31_50|age_over_50",
       suggestionCount: 2,
     },
     {
@@ -19,6 +20,7 @@ export const mockProjectData = {
       questionText: "What is your gender?",
       answerType: "radio",
       answerOptions: "Male|Female|Non-binary|Prefer not to say",
+      characteristic: "patient_is_male|patient_is_female|patient_is_nonbinary|patient_gender_undisclosed",
       suggestionCount: 0,
     },
     {
@@ -28,6 +30,7 @@ export const mockProjectData = {
       questionText: "Do you have any chronic conditions?",
       answerType: "multi_select",
       answerOptions: "Diabetes|Heart Disease|Asthma|None",
+      characteristic: "patient_has_diabetes|patient_has_heart_disease|patient_has_asthma|patient_has_no_conditions",
       suggestionCount: 1,
     },
     {
@@ -37,6 +40,7 @@ export const mockProjectData = {
       questionText: "Please describe any additional health concerns",
       answerType: "text",
       answerOptions: null,
+      characteristic: "additional_health_concerns",
       suggestionCount: 0,
     },
     {
@@ -46,6 +50,7 @@ export const mockProjectData = {
       questionText: "How often do you exercise?",
       answerType: "radio",
       answerOptions: "Daily|Weekly|Monthly|Rarely|Never",
+      characteristic: null,
       suggestionCount: 0,
     },
   ],
@@ -107,4 +112,48 @@ export const mockSuggestionSubmitResponse = {
     status: "pending",
     createdAt: new Date().toISOString(),
   },
+};
+
+// Mock comments for conversation thread tests
+export const mockComments: Array<{
+  id: number;
+  authorType: "admin" | "trust_user";
+  authorName: string;
+  authorEmail: string | null;
+  message: string;
+  createdAt: string;
+}> = [
+  {
+    id: 1,
+    authorType: "admin",
+    authorName: "Admin User",
+    authorEmail: "admin@example.com",
+    message: "Thank you for your suggestion. We are reviewing it.",
+    createdAt: "2024-01-17T10:00:00Z",
+  },
+  {
+    id: 2,
+    authorType: "trust_user",
+    authorName: "Dr. Smith",
+    authorEmail: "smith@nhs.uk",
+    message: "Please let me know if you need more details.",
+    createdAt: "2024-01-17T11:00:00Z",
+  },
+  {
+    id: 3,
+    authorType: "admin",
+    authorName: "Admin User",
+    authorEmail: "admin@example.com",
+    message: "Could you provide examples of the age ranges you recommend?",
+    createdAt: "2024-01-17T12:00:00Z",
+  },
+];
+
+export const mockCommentSubmitResponse = {
+  id: 4,
+  authorType: "admin" as const,
+  authorName: "Test Admin",
+  authorEmail: null,
+  message: "This is a new test comment.",
+  createdAt: new Date().toISOString(),
 };
