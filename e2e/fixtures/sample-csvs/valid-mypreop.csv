@@ -1,0 +1,7 @@
+Id,Section,Page,ItemType,Question,Option,Characteristic,Required,EnableWhen,HasHelper,HelperType,HelperName,HelperValue
+Q001,Who I Am,Personal Details,radio,Select your gender,Male,patient_is_male,TRUE,,FALSE,,,
+Q001,Who I Am,Personal Details,radio,Select your gender,Female,patient_is_female,TRUE,,FALSE,,,
+Q002,Who I Am,Personal Details,text-field,What is your preferred name?,,patients_preferred_name,FALSE,(patient_has_preferred_name=true),FALSE,,,
+Q003,Health,Medical History,checkbox,Select conditions that apply,Diabetes,patient_has_diabetes,FALSE,,FALSE,,,
+Q003,Health,Medical History,checkbox,Select conditions that apply,Asthma,patient_has_asthma,FALSE,,FALSE,,,
+Q003,Health,Medical History,checkbox,Select conditions that apply,None,patient_has_no_conditions,FALSE,,FALSE,,,

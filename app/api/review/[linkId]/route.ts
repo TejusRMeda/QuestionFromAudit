@@ -41,10 +41,18 @@ export async function GET(
         question_text,
         answer_type,
         answer_options,
+        characteristic,
+        section,
+        page,
+        enable_when,
+        has_helper,
+        helper_type,
+        helper_name,
+        helper_value,
         suggestions (count)
       `)
       .eq("project_id", project.id)
-      .order("question_id", { ascending: true });
+      .order("id", { ascending: true });
 
     if (questionsError) {
       console.error("Questions fetch error:", questionsError);
@@ -62,6 +70,14 @@ export async function GET(
       questionText: q.question_text,
       answerType: q.answer_type,
       answerOptions: q.answer_options,
+      characteristic: q.characteristic,
+      section: q.section,
+      page: q.page,
+      enableWhen: q.enable_when,
+      hasHelper: q.has_helper,
+      helperType: q.helper_type,
+      helperName: q.helper_name,
+      helperValue: q.helper_value,
       suggestionCount: q.suggestions?.[0]?.count || 0,
     }));
 

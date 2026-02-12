@@ -35,7 +35,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     // Fetch instance questions with suggestion counts
     const { data: questions, error: questionsError } = await supabase
       .from("instance_questions")
-      .select("id, question_id, category, question_text, answer_type, answer_options")
+      .select("id, question_id, category, question_text, answer_type, answer_options, characteristic, section, page, enable_when, has_helper, helper_type, helper_name, helper_value")
       .eq("instance_id", instance.id)
       .order("id", { ascending: true });
 
@@ -73,6 +73,14 @@ export async function GET(req: NextRequest, { params }: Params) {
       questionText: q.question_text,
       answerType: q.answer_type,
       answerOptions: q.answer_options,
+      characteristic: q.characteristic,
+      section: q.section,
+      page: q.page,
+      enableWhen: q.enable_when,
+      hasHelper: q.has_helper,
+      helperType: q.helper_type,
+      helperName: q.helper_name,
+      helperValue: q.helper_value,
       suggestionCount: suggestionCounts[q.id] || 0,
     }));
 

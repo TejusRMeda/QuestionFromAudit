@@ -54,7 +54,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Fetch master questions
     const { data: masterQuestions, error: questionsError } = await supabase
       .from("master_questions")
-      .select("question_id, category, question_text, answer_type, answer_options")
+      .select("question_id, category, question_text, answer_type, answer_options, characteristic, has_helper, helper_type, helper_name, helper_value")
       .eq("master_id", master.id);
 
     if (questionsError) {
@@ -96,6 +96,11 @@ export async function POST(req: NextRequest, { params }: Params) {
         question_text: q.question_text,
         answer_type: q.answer_type,
         answer_options: q.answer_options,
+        characteristic: q.characteristic,
+        has_helper: q.has_helper,
+        helper_type: q.helper_type,
+        helper_name: q.helper_name,
+        helper_value: q.helper_value,
       }));
 
       const { error: insertError } = await supabase

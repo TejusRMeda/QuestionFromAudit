@@ -5,6 +5,10 @@ import { Fragment, useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import ConversationThread from "./ConversationThread";
 import CommentInput from "./CommentInput";
+import { parseCharacteristics } from "@/lib/enableWhen";
+import HelperDisplay from "@/components/questionnaire/HelperDisplay";
+import ComponentChangesDisplay from "./ComponentChangesDisplay";
+import type { ComponentChanges } from "@/types/editPanel";
 
 interface Question {
   id: number;
@@ -14,6 +18,10 @@ interface Question {
   answerType?: string | null;
   answerOptions?: string | null;
   characteristic?: string | null;
+  hasHelper?: boolean | null;
+  helperType?: string | null;
+  helperName?: string | null;
+  helperValue?: string | null;
 }
 
 interface Suggestion {
@@ -27,6 +35,7 @@ interface Suggestion {
   createdAt: string;
   commentCount?: number;
   question?: Question | null;
+  componentChanges?: ComponentChanges | null;
 }
 
 interface Comment {
@@ -140,7 +149,8 @@ export default function SuggestionThreadModal({
       const newComment = await response.json();
       setComments((prev) => [...prev, newComment]);
       toast.success("Comment added");
-      onCommentAdded?.();
+      // Defer callback to next microtask so React state update propagates first
+      queueMicrotask(() => onCommentAdded?.());
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to add comment");
     } finally {
@@ -158,9 +168,7 @@ export default function SuggestionThreadModal({
 
   const renderAnswerOptions = (question: Question) => {
     const answerType = question.answerType?.toLowerCase();
-    const characteristics = question.characteristic
-      ? question.characteristic.split("|").map((c) => c.trim())
-      : [];
+    const characteristics = parseCharacteristics(question.characteristic);
 
     if (!question.answerOptions) {
       // Text-type question with only a characteristic
@@ -288,6 +296,15 @@ export default function SuggestionThreadModal({
                     {/* Question Text */}
                     <p className="text-base-content mb-3">{suggestion.question.questionText}</p>
 
+                    {/* Helper Information */}
+                    {suggestion.question.hasHelper && (
+                      <HelperDisplay
+                        helperType={suggestion.question.helperType ?? null}
+                        helperName={suggestion.question.helperName ?? null}
+                        helperValue={suggestion.question.helperValue ?? null}
+                      />
+                    )}
+
                     {/* Answer Options */}
                     {(suggestion.question.answerType || suggestion.question.answerOptions || suggestion.question.characteristic) &&
                       renderAnswerOptions(suggestion.question)
@@ -316,9 +333,19 @@ export default function SuggestionThreadModal({
                       <p className="text-xs font-medium text-base-content/60 mb-1">
                         Suggested Change
                       </p>
-                      <p className="text-sm text-base-content">
-                        {suggestion.suggestionText}
-                      </p>
+                      {suggestion.componentChanges &&
+                      Object.keys(suggestion.componentChanges).length > 0 ? (
+                        <div className="text-sm">
+                          <ComponentChangesDisplay
+                            componentChanges={suggestion.componentChanges}
+                            fallbackText={suggestion.suggestionText}
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-sm text-base-content">
+                          {suggestion.suggestionText}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs font-medium text-base-content/60 mb-1">

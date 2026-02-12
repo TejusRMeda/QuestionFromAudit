@@ -11,6 +11,7 @@ export const mockProjectData = {
       answerType: "radio",
       answerOptions: "Under 18|18-30|31-50|Over 50",
       characteristic: "age_under_18|age_18_30|age_31_50|age_over_50",
+      section: "Personal Information",
       suggestionCount: 2,
     },
     {
@@ -21,6 +22,7 @@ export const mockProjectData = {
       answerType: "radio",
       answerOptions: "Male|Female|Non-binary|Prefer not to say",
       characteristic: "patient_is_male|patient_is_female|patient_is_nonbinary|patient_gender_undisclosed",
+      section: "Personal Information",
       suggestionCount: 0,
     },
     {
@@ -31,6 +33,7 @@ export const mockProjectData = {
       answerType: "multi_select",
       answerOptions: "Diabetes|Heart Disease|Asthma|None",
       characteristic: "patient_has_diabetes|patient_has_heart_disease|patient_has_asthma|patient_has_no_conditions",
+      section: "Medical History",
       suggestionCount: 1,
     },
     {
@@ -41,6 +44,7 @@ export const mockProjectData = {
       answerType: "text",
       answerOptions: null,
       characteristic: "additional_health_concerns",
+      section: "Medical History",
       suggestionCount: 0,
     },
     {
@@ -51,6 +55,7 @@ export const mockProjectData = {
       answerType: "radio",
       answerOptions: "Daily|Weekly|Monthly|Rarely|Never",
       characteristic: null,
+      section: "Lifestyle",
       suggestionCount: 0,
     },
   ],
@@ -149,7 +154,14 @@ export const mockComments: Array<{
   },
 ];
 
-export const mockCommentSubmitResponse = {
+export const mockCommentSubmitResponse: {
+  id: number;
+  authorType: "admin" | "reviewer";
+  authorName: string;
+  authorEmail: string | null;
+  message: string;
+  createdAt: string;
+} = {
   id: 4,
   authorType: "admin" as const,
   authorName: "Test Admin",

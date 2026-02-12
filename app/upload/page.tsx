@@ -55,6 +55,14 @@ export default function UploadPage() {
             return;
           }
 
+          // Debug: Log first few rows to see Characteristic values
+          console.log("CSV Headers:", headers);
+          console.log("First 3 rows Characteristic values:", rows.slice(0, 3).map(r => ({
+            Id: r.Id,
+            Characteristic: r.Characteristic,
+            Option: r.Option,
+          })));
+
           // Group rows by Id to create questions
           const groupedRows = groupRowsByQuestion(rows);
 
@@ -63,8 +71,8 @@ export default function UploadPage() {
             return;
           }
 
-          if (groupedRows.size > 500) {
-            reject("CSV file exceeds maximum of 500 questions");
+          if (groupedRows.size > 2000) {
+            reject("CSV file exceeds maximum of 2000 questions");
             return;
           }
 
@@ -393,7 +401,7 @@ export default function UploadPage() {
                     Drop your CSV file here, or click to browse
                   </p>
                   <p className="text-sm text-base-content/60 mt-1">
-                    Maximum 500 questions, 5MB file size limit
+                    Maximum 2000 questions, 5MB file size limit
                   </p>
                 </div>
               )}

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import SuggestionDetailModal from "@/components/questionnaire/SuggestionDetailModal";
+import { ComponentChangesInline } from "@/components/questionnaire/ComponentChangesDisplay";
+import type { ComponentChanges } from "@/types/editPanel";
 
 interface Suggestion {
   id: number;
@@ -19,6 +21,7 @@ interface Suggestion {
   responseMessage: string | null;
   createdAt: string;
   updatedAt: string;
+  componentChanges: ComponentChanges | null;
 }
 
 interface ProjectData {
@@ -301,9 +304,19 @@ export default function AdminDashboardPage() {
                     </p>
 
                     {/* Suggestion Preview */}
-                    <p className="text-base-content mb-2">
-                      {truncateText(suggestion.suggestionText, 150)}
-                    </p>
+                    {suggestion.componentChanges &&
+                    Object.keys(suggestion.componentChanges).length > 0 ? (
+                      <div className="mb-2">
+                        <ComponentChangesInline
+                          componentChanges={suggestion.componentChanges}
+                          fallbackText={suggestion.suggestionText}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-base-content mb-2">
+                        {truncateText(suggestion.suggestionText, 150)}
+                      </p>
+                    )}
 
                     {/* Meta */}
                     <div className="flex items-center gap-3 text-sm text-base-content/50">

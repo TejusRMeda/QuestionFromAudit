@@ -115,10 +115,11 @@ export async function POST(req: NextRequest) {
       section: q.section?.trim() || null,
       page: q.page?.trim() || null,
       // Store characteristics as pipe-separated string (preserve alignment with options)
+      // For questions without options, use the question-level characteristic
       characteristic:
         q.options.length > 0
           ? q.options.map((opt) => opt.characteristic || "").join("|")
-          : null,
+          : q.characteristic,
       required: q.required || false,
       enable_when: q.enableWhen || null,
       has_helper: q.hasHelper || false,

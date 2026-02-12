@@ -11,6 +11,9 @@ export class ReviewPage {
   readonly suggestionModal: Locator;
   readonly loadingSpinner: Locator;
   readonly errorMessage: Locator;
+  readonly sectionCards: Locator;
+  readonly backButton: Locator;
+  readonly reviewTitle: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -25,6 +28,9 @@ export class ReviewPage {
     this.suggestionModal = page.locator('[role="dialog"]');
     this.loadingSpinner = page.locator(".loading.loading-spinner");
     this.errorMessage = page.getByText("Unable to Load Project");
+    this.sectionCards = page.locator('[data-testid="section-card"]');
+    this.backButton = page.locator('[data-testid="back-button"]');
+    this.reviewTitle = page.locator('[data-testid="review-title"]');
   }
 
   async goto(linkId: string) {
@@ -52,10 +58,24 @@ export class ReviewPage {
   }
 
   async clickSuggestChange(index: number = 0) {
-    await this.questionCards
-      .nth(index)
-      .getByRole("button", { name: /suggest change/i })
-      .click();
+    // Legacy: For tests that still expect the old modal-based behavior
+    // Now this just selects the question (clicks on the card)
+    await this.selectQuestion(index);
+  }
+
+  async selectQuestion(index: number = 0) {
+    // Click on the question card to select it for editing in the panel
+    // Question cards have rounded-box and border classes
+    const cards = this.questionCards;
+    const card = cards.nth(index);
+    // Click on the card's main area (not on interactive elements)
+    await card.click({ position: { x: 10, y: 10 } });
+  }
+
+  async selectQuestionById(questionId: string) {
+    // Select a specific question by its ID using the badge
+    const card = this.questionCards.filter({ hasText: questionId });
+    await card.click({ position: { x: 10, y: 10 } });
   }
 
   async clickViewSuggestions(index: number = 0) {
@@ -89,11 +109,13 @@ export class ReviewPage {
   }
 
   async expectTrustName(name: string) {
-    await expect(this.trustNameHeader).toContainText(name);
+    // Trust name is shown in the subtitle when on sections view
+    await expect(this.page.getByText(name)).toBeVisible();
   }
 
   async waitForToast(message: string) {
-    await expect(this.page.getByText(message)).toBeVisible();
+    // Look for toast specifically (has role="status")
+    await expect(this.page.locator('[role="status"]').getByText(message)).toBeVisible({ timeout: 10000 });
   }
 
   async getSuggestionBadgeCount(index: number = 0): Promise<number> {
@@ -103,5 +125,55 @@ export class ReviewPage {
     const text = await badge.textContent();
     const match = text?.match(/(\d+)/);
     return match ? parseInt(match[1]) : 0;
+  }
+
+  // Characteristic badges use amber styling with monospace font
+  getCharacteristicBadges(questionIndex: number = 0): Locator {
+    return this.questionCards.nth(questionIndex).locator(".badge.bg-amber-50");
+  }
+
+  async getCharacteristicBadgeTexts(questionIndex: number = 0): Promise<string[]> {
+    const badges = this.getCharacteristicBadges(questionIndex);
+    const count = await badges.count();
+    const texts: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const text = await badges.nth(i).textContent();
+      if (text) texts.push(text.trim());
+    }
+    return texts;
+  }
+
+  async expectCharacteristicVisible(text: string) {
+    await expect(this.page.locator(".badge.bg-amber-50").getByText(text)).toBeVisible();
+  }
+
+  async expectCharacteristicCount(questionIndex: number, expectedCount: number) {
+    const badges = this.getCharacteristicBadges(questionIndex);
+    await expect(badges).toHaveCount(expectedCount);
+  }
+
+  // Section navigation methods
+  async clickSection(sectionName: string) {
+    await this.sectionCards.filter({ hasText: sectionName }).click();
+  }
+
+  async goBackToSections() {
+    await this.backButton.click();
+  }
+
+  async expectSectionsView() {
+    await expect(this.reviewTitle).toContainText("Review Questionnaires");
+    await expect(this.sectionCards.first()).toBeVisible();
+    await expect(this.backButton).not.toBeVisible();
+  }
+
+  async expectSectionQuestionsView(sectionName: string) {
+    await expect(this.reviewTitle).toContainText(sectionName);
+    await expect(this.backButton).toBeVisible();
+    await expect(this.sectionCards).toHaveCount(0);
+  }
+
+  async getSectionCount() {
+    return await this.sectionCards.count();
   }
 }

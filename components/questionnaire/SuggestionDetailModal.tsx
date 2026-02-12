@@ -3,6 +3,8 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import ComponentChangesDisplay from "@/components/questionnaire/ComponentChangesDisplay";
+import type { ComponentChanges } from "@/types/editPanel";
 
 interface Suggestion {
   id: number;
@@ -18,6 +20,7 @@ interface Suggestion {
   responseMessage: string | null;
   createdAt: string;
   updatedAt: string;
+  componentChanges?: ComponentChanges | null;
 }
 
 interface SuggestionDetailModalProps {
@@ -203,9 +206,19 @@ export default function SuggestionDetailModal({
                     <h3 className="text-sm font-medium text-base-content/70 mb-2">
                       Suggested Change
                     </h3>
-                    <p className="text-base-content bg-base-200 rounded-box p-3">
-                      {suggestion.suggestionText}
-                    </p>
+                    <div className="bg-base-200 rounded-box p-3">
+                      {suggestion.componentChanges &&
+                      Object.keys(suggestion.componentChanges).length > 0 ? (
+                        <ComponentChangesDisplay
+                          componentChanges={suggestion.componentChanges}
+                          fallbackText={suggestion.suggestionText}
+                        />
+                      ) : (
+                        <p className="text-base-content">
+                          {suggestion.suggestionText}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Reason */}

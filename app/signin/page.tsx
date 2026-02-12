@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/libs/supabase/client";
 import { Provider } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
@@ -11,7 +12,9 @@ import config from "@/config";
 // Successfull login redirects to /api/auth/callback where the Code Exchange is processed (see app/api/auth/callback/route.js).
 export default function Login() {
   const supabase = createClient();
+  const router = useRouter();
   const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isDisabled, setIsDisabled] = useState<boolean>(false);
 
@@ -48,6 +51,18 @@ export default function Login() {
         toast.success("Check your emails!");
 
         setIsDisabled(true);
+      } else if (type === "password") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          toast.error(error.message);
+        } else {
+          toast.success("Signed in successfully!");
+          router.push("/dashboard");
+        }
       }
     } catch (error) {
       console.log(error);
@@ -122,7 +137,7 @@ export default function Login() {
 
         <form
           className="form-control w-full space-y-4"
-          onSubmit={(e) => handleSignup(e, { type: "magic_link" })}
+          onSubmit={(e) => handleSignup(e, { type: "password" })}
         >
           <input
             required
@@ -134,6 +149,16 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
+          <input
+            required
+            type="password"
+            value={password}
+            autoComplete="current-password"
+            placeholder="Password"
+            className="input input-bordered w-full placeholder:opacity-60"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
           <button
             className="btn btn-primary btn-block"
             disabled={isLoading || isDisabled}
@@ -142,9 +167,24 @@ export default function Login() {
             {isLoading && (
               <span className="loading loading-spinner loading-xs"></span>
             )}
-            Send Magic Link
+            Sign in
           </button>
         </form>
+
+        <div className="divider text-xs text-base-content/50 font-medium">
+          OR
+        </div>
+
+        <button
+          className="btn btn-outline btn-block"
+          onClick={(e) => handleSignup(e, { type: "magic_link" })}
+          disabled={isLoading || isDisabled || !email}
+        >
+          {isLoading && (
+            <span className="loading loading-spinner loading-xs"></span>
+          )}
+          Send Magic Link
+        </button>
       </div>
     </main>
   );

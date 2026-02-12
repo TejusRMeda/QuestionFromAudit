@@ -60,6 +60,8 @@ export interface ParsedQuestion {
   itemType: string;
   questionText: string;
   options: QuestionOption[];
+  /** Characteristic for questions without options (e.g., text-field) - from first row */
+  characteristic: string | null;
   required: boolean;
   enableWhen: EnableWhen | null;
   hasHelper: boolean;
@@ -81,6 +83,18 @@ export const MYPREOP_ITEM_TYPES = [
   "age",
   "number-input",
   "allergy-list",
+  // Additional MyPreOp types
+  "forage",
+  "bmi-calculator",
+  "frailty-score",
+  "spacer",
+  "content-block",
+  "medication-list",
+  "i-c-u-list",
+  "previous-operation-list",
+  "send-button",
+  "date",
+  "alert",
 ] as const;
 
 export type MyPreOpItemType = (typeof MYPREOP_ITEM_TYPES)[number];
@@ -101,6 +115,18 @@ export const ITEM_TYPES_NO_OPTIONS: MyPreOpItemType[] = [
   "age",
   "number-input",
   "allergy-list",
+  // Additional MyPreOp types
+  "forage",
+  "bmi-calculator",
+  "frailty-score",
+  "spacer",
+  "content-block",
+  "medication-list",
+  "i-c-u-list",
+  "previous-operation-list",
+  "send-button",
+  "date",
+  "alert",
 ];
 
 /**
@@ -143,8 +169,9 @@ export function parseEnableWhen(enableWhenStr: string): EnableWhen | null {
   const hasOr = str.includes(" OR") || str.includes(")OR");
   const logic: "AND" | "OR" = hasOr ? "OR" : "AND";
 
-  // Split by AND or OR, handling both space-separated and concatenated forms
-  const parts = str.split(/\s*(?:AND|OR)\s*|\)(?:AND|OR)\(/);
+  // Split by AND or OR, handling space-separated, concatenated, and mixed forms
+  // e.g. "(a=true) AND(b=true)", "(a=true)AND(b=true)", "(a=true) AND (b=true)"
+  const parts = str.split(/\s*\)?\s*(?:AND|OR)\s*\(?\s*/);
 
   const conditions: EnableWhenCondition[] = [];
 
@@ -226,6 +253,9 @@ export function rowsToQuestion(rows: MyPreOpCsvRow[]): ParsedQuestion {
   const required = firstRow.Required?.trim().toUpperCase() === "TRUE";
   const hasHelper = firstRow.HasHelper?.trim().toUpperCase() === "TRUE";
 
+  // Capture characteristic from first row (for questions without options like text-field)
+  const firstRowCharacteristic = firstRow.Characteristic?.trim() || null;
+
   return {
     id: firstRow.Id.trim(),
     section: firstRow.Section?.trim() || "",
@@ -233,6 +263,7 @@ export function rowsToQuestion(rows: MyPreOpCsvRow[]): ParsedQuestion {
     itemType: firstRow.ItemType?.trim().toLowerCase() || "",
     questionText: firstRow.Question?.trim() || "",
     options,
+    characteristic: firstRowCharacteristic,
     required,
     enableWhen: parseEnableWhen(firstRow.EnableWhen),
     hasHelper,

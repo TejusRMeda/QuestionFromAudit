@@ -79,15 +79,57 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createClient();
 
+    // Check for authenticated user (optional - allows both anonymous and logged-in uploads)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     // Create master questionnaire
-    const { data: master, error: masterError } = await supabase
-      .from("master_questionnaires")
-      .insert({
-        name: name.trim(),
-        admin_link_id: adminLinkId,
-      })
-      .select()
-      .single();
+    // Try with user_id first, fall back to without if column doesn't exist
+    let master;
+    let masterError;
+
+    if (user) {
+      // Try inserting with user_id (requires migration 005_user_masters.sql)
+      const result = await supabase
+        .from("master_questionnaires")
+        .insert({
+          name: name.trim(),
+          admin_link_id: adminLinkId,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      // If user_id column doesn't exist, retry without it
+      if (result.error?.message?.includes("user_id")) {
+        const fallbackResult = await supabase
+          .from("master_questionnaires")
+          .insert({
+            name: name.trim(),
+            admin_link_id: adminLinkId,
+          })
+          .select()
+          .single();
+        master = fallbackResult.data;
+        masterError = fallbackResult.error;
+      } else {
+        master = result.data;
+        masterError = result.error;
+      }
+    } else {
+      // Anonymous user - no user_id
+      const result = await supabase
+        .from("master_questionnaires")
+        .insert({
+          name: name.trim(),
+          admin_link_id: adminLinkId,
+        })
+        .select()
+        .single();
+      master = result.data;
+      masterError = result.error;
+    }
 
     if (masterError) {
       console.error("Master creation error:", masterError);
@@ -113,10 +155,11 @@ export async function POST(req: NextRequest) {
       section: q.section?.trim() || null,
       page: q.page?.trim() || null,
       // Store characteristics as pipe-separated string (preserve alignment with options)
+      // For questions without options, use the question-level characteristic
       characteristic:
         q.options.length > 0
           ? q.options.map((opt) => opt.characteristic || "").join("|")
-          : null,
+          : q.characteristic,
       required: q.required || false,
       enable_when: q.enableWhen || null,
       has_helper: q.hasHelper || false,
