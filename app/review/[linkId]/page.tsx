@@ -1,10 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
-import SuggestionModal from "@/components/questionnaire/SuggestionModal";
-import ViewSuggestionsModal from "@/components/questionnaire/ViewSuggestionsModal";
+import {
+  buildCharacteristicMap,
+  translateEnableWhen,
+  TranslatedEnableWhen,
+} from "@/lib/enableWhen";
+import { EnableWhen } from "@/types/question";
+import { EditableQuestion } from "@/types/editPanel";
+import { useEditPanelState } from "@/hooks/useEditPanelState";
+import SplitScreenLayout from "@/components/questionnaire/panel/SplitScreenLayout";
+import QuestionsList from "@/components/questionnaire/panel/QuestionsList";
+import EditPanel from "@/components/questionnaire/panel/EditPanel";
+import MobileEditModal from "@/components/questionnaire/panel/MobileEditModal";
+import UnsavedChangesDialog from "@/components/questionnaire/panel/UnsavedChangesDialog";
 
 interface Question {
   id: number;
@@ -13,12 +24,25 @@ interface Question {
   questionText: string;
   answerType: string | null;
   answerOptions: string | null;
+  characteristic: string | null;
+  section: string | null;
+  page: string | null;
+  enableWhen: EnableWhen | null;
+  hasHelper: boolean | null;
+  helperType: string | null;
+  helperName: string | null;
+  helperValue: string | null;
   suggestionCount: number;
 }
 
 interface ProjectData {
   trustName: string;
   createdAt: string;
+  questions: Question[];
+}
+
+interface Section {
+  name: string;
   questions: Question[];
 }
 
@@ -31,12 +55,74 @@ export default function ReviewPage() {
   const [project, setProject] = useState<ProjectData | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-
-  // Modal states
-  const [suggestionModalOpen, setSuggestionModalOpen] = useState(false);
-  const [viewSuggestionsModalOpen, setViewSuggestionsModalOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [questionAnswers, setQuestionAnswers] = useState<Record<number, string | string[]>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileModalOpen, setMobileModalOpen] = useState(false);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingQuestionSelection, setPendingQuestionSelection] = useState<EditableQuestion | null>(null);
+
+  // Group questions by section, preserving order of first appearance
+  const sections = useMemo<Section[]>(() => {
+    if (!project?.questions) return [];
+    const sectionMap = new Map<string, Question[]>();
+    const sectionOrder: string[] = [];
+
+    for (const question of project.questions) {
+      const sectionName = question.section?.trim() || "General";
+      if (!sectionMap.has(sectionName)) {
+        sectionMap.set(sectionName, []);
+        sectionOrder.push(sectionName);
+      }
+      sectionMap.get(sectionName)!.push(question);
+    }
+
+    return sectionOrder.map((name) => ({
+      name,
+      questions: sectionMap.get(name)!,
+    }));
+  }, [project?.questions]);
+
+  // Get the current section's questions (or all if no section selected)
+  const currentSectionQuestions = useMemo(() => {
+    if (!selectedSection) return project?.questions || [];
+    const section = sections.find((s) => s.name === selectedSection);
+    return section?.questions || [];
+  }, [selectedSection, sections, project?.questions]);
+
+  // Convert questions to EditableQuestion format
+  const editableQuestions: EditableQuestion[] = useMemo(() => {
+    return currentSectionQuestions.map((q) => ({
+      ...q,
+      required: false,
+    }));
+  }, [currentSectionQuestions]);
+
+  // Edit panel state
+  const editPanelState = useEditPanelState(editableQuestions);
+
+  // Check for mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Browser beforeunload warning
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (editPanelState.hasChanges()) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [editPanelState]);
 
   const fetchProject = async () => {
     try {
@@ -61,35 +147,53 @@ export default function ReviewPage() {
     }
   }, [linkId]);
 
-  // Get unique categories
-  const categories = project
-    ? [...new Set(project.questions.map((q) => q.category))]
-    : [];
+  // Build characteristic map for EnableWhen translation
+  const characteristicMap = useMemo(() => {
+    if (!project?.questions) return new Map();
+    return buildCharacteristicMap(project.questions);
+  }, [project?.questions]);
 
-  // Filter questions
-  const filteredQuestions = project?.questions.filter((q) => {
-    const matchesSearch =
-      searchTerm === "" ||
-      q.questionText.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.questionId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "all" || q.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  // Build translated EnableWhen conditions for each question
+  const translatedEnableWhens = useMemo(() => {
+    const map = new Map<number, TranslatedEnableWhen>();
+    if (!project?.questions) return map;
 
-  const handleSuggestChange = (question: Question) => {
-    setSelectedQuestion(question);
-    setSuggestionModalOpen(true);
+    for (const q of project.questions) {
+      if (q.enableWhen) {
+        map.set(q.id, translateEnableWhen(q.enableWhen, characteristicMap));
+      }
+    }
+    return map;
+  }, [project?.questions, characteristicMap]);
+
+  // Get unique categories (scoped to current section when a section is selected)
+  const categories = useMemo(() => {
+    return [...new Set(currentSectionQuestions.map((q) => q.category))];
+  }, [currentSectionQuestions]);
+
+  // Navigation handlers
+  const handleSelectSection = (sectionName: string) => {
+    // Check for unsaved changes before switching sections
+    if (editPanelState.hasChanges()) {
+      setUnsavedDialogOpen(true);
+      return;
+    }
+    setSelectedSection(sectionName);
+    setSearchTerm("");
+    setCategoryFilter("all");
+    editPanelState.reset();
   };
 
-  const handleViewSuggestions = (question: Question) => {
-    setSelectedQuestion(question);
-    setViewSuggestionsModalOpen(true);
-  };
-
-  const handleSuggestionSuccess = () => {
-    // Refresh the project to update suggestion counts
-    fetchProject();
+  const handleBackToSections = () => {
+    // Check for unsaved changes before going back
+    if (editPanelState.hasChanges()) {
+      setUnsavedDialogOpen(true);
+      return;
+    }
+    setSelectedSection(null);
+    setSearchTerm("");
+    setCategoryFilter("all");
+    editPanelState.reset();
   };
 
   const handleAnswerChange = (questionId: number, value: string | string[]) => {
@@ -99,87 +203,83 @@ export default function ReviewPage() {
     }));
   };
 
-  const renderAnswerInputs = (question: Question) => {
-    const answerType = question.answerType?.toLowerCase();
-    const currentAnswer = questionAnswers[question.id];
+  // Handle question selection
+  const handleSelectQuestion = useCallback(
+    (question: EditableQuestion) => {
+      const canSelect = editPanelState.selectQuestion(question);
+      if (!canSelect) {
+        setPendingQuestionSelection(question);
+        setUnsavedDialogOpen(true);
+        return;
+      }
 
-    if (answerType === "text") {
-      return (
-        <div className="form-control">
-          <input
-            type="text"
-            placeholder="Enter your answer..."
-            value={typeof currentAnswer === "string" ? currentAnswer : ""}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-            className="input input-bordered w-full"
-          />
-        </div>
-      );
+      if (isMobile) {
+        setMobileModalOpen(true);
+      }
+    },
+    [editPanelState, isMobile]
+  );
+
+  // Handle discard changes and select pending question
+  const handleDiscardAndSelect = useCallback(() => {
+    editPanelState.clearChanges();
+    if (pendingQuestionSelection) {
+      editPanelState.selectQuestion(pendingQuestionSelection);
+      if (isMobile) {
+        setMobileModalOpen(true);
+      }
     }
+    setUnsavedDialogOpen(false);
+    setPendingQuestionSelection(null);
+  }, [editPanelState, pendingQuestionSelection, isMobile]);
 
-    if (answerType === "radio" && question.answerOptions) {
-      const options = question.answerOptions.split("|").map((o) => o.trim()).filter(Boolean);
-      return (
-        <div className="flex flex-col gap-1">
-          {options.map((option, idx) => (
-            <label key={idx} className="label cursor-pointer justify-start gap-3 py-2">
-              <input
-                type="radio"
-                name={`question-${question.id}`}
-                value={option}
-                checked={currentAnswer === option}
-                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                className="radio radio-primary"
-              />
-              <span className="label-text">{option}</span>
-            </label>
-          ))}
-        </div>
+  // Handle submission - uses the suggestions API route
+  const handleSubmit = async () => {
+    const data = editPanelState.getSubmissionData();
+    if (!data) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/suggestions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          questionId: data.instanceQuestionId,
+          submitterName: data.submitterName,
+          submitterEmail: data.submitterEmail,
+          suggestionText: data.suggestionText,
+          reason: data.reason,
+          componentChanges: data.componentChanges,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to submit suggestion");
+      }
+
+      toast.success("Suggestion submitted successfully!");
+      editPanelState.clearChanges();
+      setMobileModalOpen(false);
+
+      // Refresh to get updated suggestion counts
+      fetchProject();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit suggestion"
       );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (answerType === "multi_select" && question.answerOptions) {
-      const options = question.answerOptions.split("|").map((o) => o.trim()).filter(Boolean);
-      const selectedValues = Array.isArray(currentAnswer) ? currentAnswer : [];
-
-      return (
-        <div className="flex flex-col gap-1">
-          {options.map((option, idx) => (
-            <label key={idx} className="label cursor-pointer justify-start gap-3 py-2">
-              <input
-                type="checkbox"
-                value={option}
-                checked={selectedValues.includes(option)}
-                onChange={(e) => {
-                  const newValues = e.target.checked
-                    ? [...selectedValues, option]
-                    : selectedValues.filter((v) => v !== option);
-                  handleAnswerChange(question.id, newValues);
-                }}
-                className="checkbox checkbox-primary"
-              />
-              <span className="label-text">{option}</span>
-            </label>
-          ))}
-        </div>
-      );
-    }
-
-    // Fallback: show options as badges if type is not recognized
-    if (question.answerOptions) {
-      return (
-        <div className="flex flex-col gap-2">
-          {question.answerOptions.split("|").map((option, idx) => (
-            <span key={idx} className="badge badge-outline badge-sm">
-              {option.trim()}
-            </span>
-          ))}
-        </div>
-      );
-    }
-
-    return null;
   };
+
+  // Get selected question index
+  const selectedQuestionIndex = useMemo(() => {
+    if (!editPanelState.selectedQuestion) return 0;
+    return editableQuestions.findIndex((q) => q.id === editPanelState.selectedQuestion?.id);
+  }, [editableQuestions, editPanelState.selectedQuestion]);
 
   // Loading state
   if (loading) {
@@ -223,17 +323,125 @@ export default function ReviewPage() {
     );
   }
 
+  const translatedEnableWhen = editPanelState.selectedQuestion
+    ? translatedEnableWhens.get(editPanelState.selectedQuestion.id) || null
+    : null;
+
+  // Sections Overview (when no section selected)
+  if (!selectedSection) {
+    return (
+      <div className="min-h-screen bg-base-200">
+        {/* Header */}
+        <div className="bg-base-100 border-b border-base-300 sticky top-0 z-10">
+          <div className="max-w-6xl mx-auto px-4 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-xl font-bold" data-testid="review-title">
+                  Review Questionnaires
+                </h1>
+                <p className="text-sm text-base-content/60">
+                  {project.trustName}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="badge badge-primary badge-outline">
+                  Review Mode
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sections Grid */}
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {sections.map((section) => {
+              const suggestionCount = section.questions.reduce(
+                (sum, q) => sum + q.suggestionCount,
+                0
+              );
+              return (
+                <button
+                  key={section.name}
+                  onClick={() => handleSelectSection(section.name)}
+                  className="bg-base-100 rounded-box border border-base-300 p-5 text-left hover:shadow-md hover:border-primary/30 transition-all group"
+                  data-testid="section-card"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base-content truncate">
+                        {section.name}
+                      </h3>
+                      <p className="text-sm text-base-content/60 mt-1">
+                        {section.questions.length} question
+                        {section.questions.length !== 1 ? "s" : ""}
+                      </p>
+                      {suggestionCount > 0 && (
+                        <span className="badge badge-info badge-sm mt-2">
+                          {suggestionCount} suggestion
+                          {suggestionCount !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-base-content/40 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Section Questions View with Split-Screen Layout
   return (
-    <div className="min-h-screen bg-base-200">
+    <div className="h-screen bg-base-200 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-base-100 border-b border-base-300 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="bg-base-100 border-b border-base-300 sticky top-0 z-10 flex-shrink-0">
+        <div className="max-w-[1800px] mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-bold">{project.trustName}</h1>
-              <p className="text-sm text-base-content/60">
-                {project.questions.length} questions
-              </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleBackToSections}
+                className="btn btn-ghost btn-sm btn-circle -ml-2"
+                data-testid="back-button"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-xl font-bold" data-testid="review-title">
+                  {selectedSection}
+                </h1>
+                <p className="text-sm text-base-content/60">
+                  {currentSectionQuestions.length} question
+                  {currentSectionQuestions.length !== 1 ? "s" : ""}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="badge badge-primary badge-outline">
@@ -245,55 +453,55 @@ export default function ReviewPage() {
       </div>
 
       {/* Filters */}
-      <div className="max-w-3xl mx-auto px-4 py-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-base-content/40"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      <div className="bg-base-100 border-b border-base-300 flex-shrink-0">
+        <div className="max-w-[1800px] mx-auto px-4 py-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-base-content/40"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search questions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input input-bordered w-full pl-10 input-sm"
               />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search questions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input input-bordered w-full pl-10"
-            />
+            </div>
+            {/* Category Filter */}
+            <div className="sm:w-48">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="select select-bordered w-full select-sm"
+              >
+                <option value="all">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          {/* Category Filter */}
-          <div className="sm:w-48">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="select select-bordered w-full"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-        {/* Filter summary */}
-        {(searchTerm || categoryFilter !== "all") && (
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-sm text-base-content/60">
-              Showing {filteredQuestions?.length || 0} of {project.questions.length} questions
-            </span>
-            {(searchTerm || categoryFilter !== "all") && (
+          {/* Filter summary */}
+          {(searchTerm || categoryFilter !== "all") && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm text-base-content/60">
+                Showing filtered results
+              </span>
               <button
                 className="btn btn-ghost btn-xs"
                 onClick={() => {
@@ -303,145 +511,97 @@ export default function ReviewPage() {
               >
                 Clear filters
               </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Questions List */}
-      <div className="max-w-3xl mx-auto px-4 pb-8">
-        {filteredQuestions && filteredQuestions.length > 0 ? (
-          <div className="flex flex-col gap-4">
-            {filteredQuestions.map((question) => (
-              <div
-                key={question.id}
-                className="bg-base-100 rounded-box border border-base-300 p-5 hover:shadow-md transition-shadow"
-              >
-                {/* Question Header */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="badge badge-neutral badge-sm font-mono">
-                      {question.questionId}
-                    </span>
-                    <span className="badge badge-ghost badge-sm">
-                      {question.category}
-                    </span>
-                  </div>
-                  {question.suggestionCount > 0 && (
-                    <span className="badge badge-info badge-sm whitespace-nowrap">
-                      {question.suggestionCount} suggestion
-                      {question.suggestionCount !== 1 ? "s" : ""}
-                    </span>
-                  )}
-                </div>
-
-                {/* Question Text */}
-                <p className="text-base-content mb-3">{question.questionText}</p>
-
-                {/* Answer Inputs */}
-                {(question.answerType || question.answerOptions) && (
-                  <div className="mb-4 p-3 bg-base-200 rounded-box">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs font-medium text-base-content/70 uppercase">
-                        {question.answerType?.toLowerCase() === "radio"
-                          ? "Single choice"
-                          : question.answerType?.toLowerCase() === "multi_select"
-                          ? "Multiple choice"
-                          : question.answerType?.toLowerCase() === "text"
-                          ? "Free text"
-                          : question.answerType || "Options"}
-                      </span>
-                    </div>
-                    {renderAnswerInputs(question)}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex items-center justify-between pt-2 border-t border-base-200">
-                  <button
-                    className="btn btn-ghost btn-sm text-base-content/60"
-                    onClick={() => handleViewSuggestions(question)}
-                  >
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
-                    View Suggestions
-                  </button>
-                  <button
-                    className="btn btn-outline btn-primary btn-sm"
-                    onClick={() => handleSuggestChange(question)}
-                  >
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Suggest Change
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-base-300 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-base-content/40"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
             </div>
-            <p className="text-base-content/60">
-              {searchTerm || categoryFilter !== "all"
-                ? "No questions match your filters"
-                : "No questions found"}
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Modals */}
-      <SuggestionModal
-        isOpen={suggestionModalOpen}
-        onClose={() => setSuggestionModalOpen(false)}
-        question={selectedQuestion}
-        onSuccess={handleSuggestionSuccess}
+      {/* Main Content - Split Screen */}
+      <div className="flex-1 overflow-hidden">
+        <SplitScreenLayout
+          leftPanel={
+            <QuestionsList
+              questions={editableQuestions}
+              selectedQuestionId={editPanelState.state.selectedQuestionId}
+              onSelectQuestion={handleSelectQuestion}
+              searchTerm={searchTerm}
+              categoryFilter={categoryFilter}
+              translatedEnableWhens={translatedEnableWhens}
+              questionAnswers={questionAnswers}
+              onAnswerChange={handleAnswerChange}
+            />
+          }
+          rightPanel={
+            <EditPanel
+              question={editPanelState.selectedQuestion}
+              allQuestions={editableQuestions}
+              activeTab={editPanelState.state.activeTab}
+              onTabChange={editPanelState.setActiveTab}
+              changes={editPanelState.state.changes}
+              onUpdateSettings={editPanelState.updateSettings}
+              onUpdateContent={editPanelState.updateContent}
+              onUpdateHelp={editPanelState.updateHelp}
+              onUpdateLogic={editPanelState.updateLogic}
+              submitterName={editPanelState.state.submitterName}
+              submitterEmail={editPanelState.state.submitterEmail}
+              notes={editPanelState.state.notes}
+              onSubmitterNameChange={editPanelState.setSubmitterName}
+              onSubmitterEmailChange={editPanelState.setSubmitterEmail}
+              onNotesChange={editPanelState.setNotes}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              tabHasChanges={editPanelState.tabHasChanges}
+              tabHasErrors={editPanelState.tabHasErrors}
+              validationErrors={editPanelState.validate()}
+              translatedEnableWhen={translatedEnableWhen}
+              onSelectQuestion={handleSelectQuestion}
+              questionIndex={selectedQuestionIndex}
+              totalQuestions={editableQuestions.length}
+            />
+          }
+        />
+      </div>
+
+      {/* Mobile Edit Modal */}
+      <MobileEditModal
+        isOpen={mobileModalOpen && isMobile}
+        onClose={() => setMobileModalOpen(false)}
+        question={editPanelState.selectedQuestion}
+        allQuestions={editableQuestions}
+        activeTab={editPanelState.state.activeTab}
+        onTabChange={editPanelState.setActiveTab}
+        changes={editPanelState.state.changes}
+        onUpdateSettings={editPanelState.updateSettings}
+        onUpdateContent={editPanelState.updateContent}
+        onUpdateHelp={editPanelState.updateHelp}
+        onUpdateLogic={editPanelState.updateLogic}
+        submitterName={editPanelState.state.submitterName}
+        submitterEmail={editPanelState.state.submitterEmail}
+        notes={editPanelState.state.notes}
+        onSubmitterNameChange={editPanelState.setSubmitterName}
+        onSubmitterEmailChange={editPanelState.setSubmitterEmail}
+        onNotesChange={editPanelState.setNotes}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        tabHasChanges={editPanelState.tabHasChanges}
+        tabHasErrors={editPanelState.tabHasErrors}
+        validationErrors={editPanelState.validate()}
+        translatedEnableWhen={translatedEnableWhen}
+        onSelectQuestion={handleSelectQuestion}
+        questionIndex={selectedQuestionIndex}
+        totalQuestions={editableQuestions.length}
+        hasUnsavedChanges={editPanelState.hasChanges()}
+        onDiscardChanges={editPanelState.clearChanges}
       />
 
-      <ViewSuggestionsModal
-        isOpen={viewSuggestionsModalOpen}
-        onClose={() => setViewSuggestionsModalOpen(false)}
-        question={selectedQuestion}
-        onSuggestChange={() => {
-          setViewSuggestionsModalOpen(false);
-          setSuggestionModalOpen(true);
+      {/* Unsaved Changes Dialog */}
+      <UnsavedChangesDialog
+        isOpen={unsavedDialogOpen}
+        onKeepEditing={() => {
+          setUnsavedDialogOpen(false);
+          setPendingQuestionSelection(null);
         }}
+        onDiscard={handleDiscardAndSelect}
       />
     </div>
   );

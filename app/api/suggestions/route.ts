@@ -1,18 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 
+interface ComponentChanges {
+  settings?: {
+    required?: { from: boolean; to: boolean };
+  };
+  content?: {
+    questionText?: { from: string; to: string };
+    answerType?: { from: string; to: string };
+    options?: {
+      added: Array<{ text: string; characteristic: string }>;
+      modified: Array<{ index: number; from: string; to: string }>;
+      removed: number[];
+    };
+  };
+  help?: {
+    hasHelper?: { from: boolean; to: boolean };
+    helperName?: { from: string | null; to: string };
+    helperValue?: { from: string | null; to: string };
+    helperType?: { from: string | null; to: string };
+  };
+  logic?: {
+    description: string;
+  };
+}
+
 interface SuggestionRequest {
   questionId: number;
   submitterName: string;
   submitterEmail?: string | null;
   suggestionText: string;
   reason: string;
+  componentChanges?: ComponentChanges;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: SuggestionRequest = await req.json();
-    const { questionId, submitterName, submitterEmail, suggestionText, reason } = body;
+    const { questionId, submitterName, submitterEmail, suggestionText, reason, componentChanges } = body;
 
     // Validate required fields
     if (!questionId) {
@@ -82,17 +107,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create the suggestion
+    // Create the suggestion with optional component changes
+    const insertData: Record<string, unknown> = {
+      question_id: questionId,
+      submitter_name: submitterName.trim(),
+      submitter_email: submitterEmail?.trim() || null,
+      suggestion_text: suggestionText.trim(),
+      reason: reason.trim(),
+      status: "pending",
+    };
+
+    // Add component_changes if provided
+    if (componentChanges && Object.keys(componentChanges).length > 0) {
+      insertData.component_changes = componentChanges;
+    }
+
     const { data: suggestion, error: suggestionError } = await supabase
       .from("suggestions")
-      .insert({
-        question_id: questionId,
-        submitter_name: submitterName.trim(),
-        submitter_email: submitterEmail?.trim() || null,
-        suggestion_text: suggestionText.trim(),
-        reason: reason.trim(),
-        status: "pending",
-      })
+      .insert(insertData)
       .select()
       .single();
 

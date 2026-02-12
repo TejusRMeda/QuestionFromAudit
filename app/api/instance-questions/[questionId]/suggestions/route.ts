@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     // Fetch suggestions for this instance question
     const { data: suggestions, error } = await supabase
       .from("instance_suggestions")
-      .select("id, submitter_name, suggestion_text, reason, status, response_message, created_at")
+      .select("id, submitter_name, suggestion_text, reason, status, response_message, created_at, component_changes")
       .eq("instance_question_id", questionIdNum)
       .order("created_at", { ascending: false });
 
@@ -34,8 +34,26 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
+    // Get comment counts for all suggestions
+    const suggestionIds = suggestions?.map((s) => s.id) || [];
+    let commentCounts: Record<number, number> = {};
+
+    if (suggestionIds.length > 0) {
+      const { data: commentData, error: commentError } = await supabase
+        .from("suggestion_comments")
+        .select("suggestion_id")
+        .in("suggestion_id", suggestionIds);
+
+      if (!commentError && commentData) {
+        commentCounts = commentData.reduce((acc, row) => {
+          acc[row.suggestion_id] = (acc[row.suggestion_id] || 0) + 1;
+          return acc;
+        }, {} as Record<number, number>);
+      }
+    }
+
     // Format response
-    const formattedSuggestions = suggestions?.map((s) => ({
+    const formattedSuggestions = suggestions?.map((s: any) => ({
       id: s.id,
       submitterName: s.submitter_name,
       suggestionText: s.suggestion_text,
@@ -43,6 +61,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       status: s.status,
       responseMessage: s.response_message,
       createdAt: s.created_at,
+      commentCount: commentCounts[s.id] || 0,
+      componentChanges: s.component_changes || null,
     }));
 
     return NextResponse.json({

@@ -29,3 +29,9 @@ yarn-error.log*
 # Test output
 playwright-report/
 test-results/
+
+# Supabase local temp
+supabase/.temp/
+
+# Claude Code local settings
+.claude/settings.local.json

@@ -138,7 +138,7 @@ describe("Upload API Validation", () => {
 
   describe("questions array validation", () => {
     it("should reject missing questions", () => {
-      const payload = {
+      const payload: UploadPayload = {
         trustName: "Test Trust",
         questions: [],
       };

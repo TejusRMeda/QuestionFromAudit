@@ -314,8 +314,8 @@ describe("Answer Input Rendering Logic", () => {
     });
 
     it("should return all when no filters applied", () => {
-      const searchTerm = "";
-      const categoryFilter = "all";
+      const searchTerm: string = "";
+      const categoryFilter: string = "all";
       const filtered = questions.filter((q) => {
         const matchesSearch =
           searchTerm === "" ||

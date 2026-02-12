@@ -61,7 +61,8 @@ export async function GET(
         internal_comment,
         response_message,
         created_at,
-        updated_at
+        updated_at,
+        component_changes
       `)
       .in("question_id", questionIds)
       .order("created_at", { ascending: false });
@@ -87,7 +88,7 @@ export async function GET(
     );
 
     // Transform suggestions with question details
-    const suggestionsWithDetails = suggestions.map((s) => {
+    const suggestionsWithDetails = suggestions.map((s: any) => {
       const questionDetails = questionMap.get(s.question_id);
       return {
         id: s.id,
@@ -103,6 +104,7 @@ export async function GET(
         responseMessage: s.response_message,
         createdAt: s.created_at,
         updatedAt: s.updated_at,
+        componentChanges: s.component_changes || null,
       };
     });
 

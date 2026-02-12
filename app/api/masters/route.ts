@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import crypto from "crypto";
-
-interface Question {
-  Question_ID: string;
-  Category: string;
-  Question_Text: string;
-  Answer_Type: string;
-  Answer_Options: string;
-}
-
-const VALID_ANSWER_TYPES = ["text", "radio", "multi_select"];
+import {
+  ParsedQuestion,
+  MYPREOP_ITEM_TYPES,
+  ITEM_TYPES_REQUIRING_OPTIONS,
+  MyPreOpItemType,
+} from "@/types/question";
 
 interface CreateMasterRequest {
   name: string;
-  questions: Question[];
+  questions: ParsedQuestion[];
 }
 
 // Generate a cryptographically secure URL-safe random ID
@@ -54,29 +50,24 @@ export async function POST(req: NextRequest) {
       const q = questions[i];
       const rowNum = i + 1;
 
-      // Validate Answer_Type
-      const answerType = q.Answer_Type?.trim().toLowerCase();
-      if (!answerType || !VALID_ANSWER_TYPES.includes(answerType)) {
+      // Validate ItemType
+      const itemType = q.itemType?.toLowerCase() as MyPreOpItemType;
+      if (!itemType || !MYPREOP_ITEM_TYPES.includes(itemType)) {
         return NextResponse.json(
-          { message: `Question ${rowNum}: Answer_Type must be text, radio, or multi_select` },
+          {
+            message: `Question ${rowNum}: ItemType must be one of: ${MYPREOP_ITEM_TYPES.join(", ")}`,
+          },
           { status: 400 }
         );
       }
 
-      // Validate Answer_Options based on type
-      const answerOptions = q.Answer_Options?.trim() || "";
-      if (answerType === "text") {
-        if (answerOptions) {
+      // Validate options based on type
+      if (ITEM_TYPES_REQUIRING_OPTIONS.includes(itemType)) {
+        if (!q.options || q.options.length < 2) {
           return NextResponse.json(
-            { message: `Question ${rowNum}: Answer_Options must be empty for text type` },
-            { status: 400 }
-          );
-        }
-      } else {
-        const options = answerOptions.split("|").filter(Boolean);
-        if (options.length < 2) {
-          return NextResponse.json(
-            { message: `Question ${rowNum}: ${answerType} type requires at least 2 options` },
+            {
+              message: `Question ${rowNum}: ${itemType} type requires at least 2 options`,
+            },
             { status: 400 }
           );
         }
@@ -88,15 +79,57 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createClient();
 
+    // Check for authenticated user (optional - allows both anonymous and logged-in uploads)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     // Create master questionnaire
-    const { data: master, error: masterError } = await supabase
-      .from("master_questionnaires")
-      .insert({
-        name: name.trim(),
-        admin_link_id: adminLinkId,
-      })
-      .select()
-      .single();
+    // Try with user_id first, fall back to without if column doesn't exist
+    let master;
+    let masterError;
+
+    if (user) {
+      // Try inserting with user_id (requires migration 005_user_masters.sql)
+      const result = await supabase
+        .from("master_questionnaires")
+        .insert({
+          name: name.trim(),
+          admin_link_id: adminLinkId,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      // If user_id column doesn't exist, retry without it
+      if (result.error?.message?.includes("user_id")) {
+        const fallbackResult = await supabase
+          .from("master_questionnaires")
+          .insert({
+            name: name.trim(),
+            admin_link_id: adminLinkId,
+          })
+          .select()
+          .single();
+        master = fallbackResult.data;
+        masterError = fallbackResult.error;
+      } else {
+        master = result.data;
+        masterError = result.error;
+      }
+    } else {
+      // Anonymous user - no user_id
+      const result = await supabase
+        .from("master_questionnaires")
+        .insert({
+          name: name.trim(),
+          admin_link_id: adminLinkId,
+        })
+        .select()
+        .single();
+      master = result.data;
+      masterError = result.error;
+    }
 
     if (masterError) {
       console.error("Master creation error:", masterError);
@@ -109,11 +142,30 @@ export async function POST(req: NextRequest) {
     // Prepare questions for insertion
     const questionsToInsert = questions.map((q) => ({
       master_id: master.id,
-      question_id: q.Question_ID.trim(),
-      category: q.Category.trim(),
-      question_text: q.Question_Text.trim(),
-      answer_type: q.Answer_Type.trim().toLowerCase(),
-      answer_options: q.Answer_Options?.trim() || null,
+      question_id: q.id.trim(),
+      category: q.section.trim(), // Use section as primary category
+      question_text: q.questionText.trim(),
+      answer_type: q.itemType.toLowerCase(),
+      // Convert options array to pipe-separated string for backward compatibility
+      answer_options:
+        q.options.length > 0
+          ? q.options.map((opt) => opt.value).join("|")
+          : null,
+      // New MyPreOp fields
+      section: q.section?.trim() || null,
+      page: q.page?.trim() || null,
+      // Store characteristics as pipe-separated string (preserve alignment with options)
+      // For questions without options, use the question-level characteristic
+      characteristic:
+        q.options.length > 0
+          ? q.options.map((opt) => opt.characteristic || "").join("|")
+          : q.characteristic,
+      required: q.required || false,
+      enable_when: q.enableWhen || null,
+      has_helper: q.hasHelper || false,
+      helper_type: q.helperType || null,
+      helper_name: q.helperName || null,
+      helper_value: q.helperValue || null,
     }));
 
     // Insert master questions
@@ -124,7 +176,13 @@ export async function POST(req: NextRequest) {
     if (questionsError) {
       console.error("Questions insertion error:", questionsError);
       // Rollback: delete the master if questions fail
-      await supabase.from("master_questionnaires").delete().eq("id", master.id);
+      const { error: deleteError } = await supabase
+        .from("master_questionnaires")
+        .delete()
+        .eq("id", master.id);
+      if (deleteError) {
+        console.error("Rollback failed:", deleteError);
+      }
       return NextResponse.json(
         { message: "Failed to save questions" },
         { status: 500 }

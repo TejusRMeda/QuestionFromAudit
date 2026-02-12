@@ -4,21 +4,22 @@ import { useState, useRef, DragEvent, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import toast from "react-hot-toast";
-
-interface ParsedQuestion {
-  Question_ID: string;
-  Category: string;
-  Question_Text: string;
-  Answer_Type: string;
-  Answer_Options: string;
-}
+import {
+  MyPreOpCsvRow,
+  ParsedQuestion,
+  MYPREOP_REQUIRED_COLUMNS,
+  MYPREOP_ITEM_TYPES,
+  ITEM_TYPES_REQUIRING_OPTIONS,
+  ITEM_TYPES_NO_OPTIONS,
+  groupRowsByQuestion,
+  rowsToQuestion,
+  MyPreOpItemType,
+} from "@/types/question";
 
 interface ValidationResult {
   questions: ParsedQuestion[];
   warnings: string[];
 }
-
-const VALID_ANSWER_TYPES = ["text", "radio", "multi_select"];
 
 export default function UploadPage() {
   const router = useRouter();
@@ -33,21 +34,14 @@ export default function UploadPage() {
 
   const validateCSV = (file: File): Promise<ValidationResult> => {
     return new Promise((resolve, reject) => {
-      Papa.parse<ParsedQuestion>(file, {
+      Papa.parse<MyPreOpCsvRow>(file, {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          const requiredColumns = [
-            "Question_ID",
-            "Category",
-            "Question_Text",
-            "Answer_Type",
-            "Answer_Options",
-          ];
           const headers = results.meta.fields || [];
 
           // Check for required columns
-          const missingColumns = requiredColumns.filter(
+          const missingColumns = MYPREOP_REQUIRED_COLUMNS.filter(
             (col) => !headers.includes(col)
           );
           if (missingColumns.length > 0) {
@@ -55,118 +49,144 @@ export default function UploadPage() {
             return;
           }
 
-          // Validate data
-          const questions = results.data as ParsedQuestion[];
-          if (questions.length === 0) {
+          const rows = results.data as MyPreOpCsvRow[];
+          if (rows.length === 0) {
             reject("CSV file contains no data rows");
             return;
           }
 
-          if (questions.length > 500) {
-            reject("CSV file exceeds maximum of 500 questions");
+          // Debug: Log first few rows to see Characteristic values
+          console.log("CSV Headers:", headers);
+          console.log("First 3 rows Characteristic values:", rows.slice(0, 3).map(r => ({
+            Id: r.Id,
+            Characteristic: r.Characteristic,
+            Option: r.Option,
+          })));
+
+          // Group rows by Id to create questions
+          const groupedRows = groupRowsByQuestion(rows);
+
+          if (groupedRows.size === 0) {
+            reject("No valid questions found in CSV");
+            return;
+          }
+
+          if (groupedRows.size > 2000) {
+            reject("CSV file exceeds maximum of 2000 questions");
             return;
           }
 
           const warnings: string[] = [];
-          const questionIds = new Set<string>();
-          const categoryCounts: Record<string, number> = {};
+          const questions: ParsedQuestion[] = [];
+          const sectionCounts: Record<string, number> = {};
 
-          for (let i = 0; i < questions.length; i++) {
-            const q = questions[i];
-            const rowNum = i + 2; // Account for header row
+          // Process each group of rows into a question
+          for (const [id, questionRows] of groupedRows) {
+            const rowNums = questionRows
+              .map((_, i) => rows.indexOf(questionRows[i]) + 2)
+              .join(", ");
 
-            // Required field validations
-            if (!q.Question_ID?.trim()) {
-              reject(`Row ${rowNum}: Question_ID is empty`);
-              return;
-            }
-            if (!q.Category?.trim()) {
-              reject(`Row ${rowNum}: Category is empty`);
-              return;
-            }
-            if (!q.Question_Text?.trim()) {
-              reject(`Row ${rowNum}: Question_Text is empty`);
-              return;
-            }
-            if (q.Question_Text.length > 1000) {
-              reject(`Row ${rowNum}: Question_Text exceeds 1000 character limit`);
-              return;
-            }
-            if (questionIds.has(q.Question_ID)) {
-              reject(`Duplicate Question_ID found: ${q.Question_ID}`);
-              return;
-            }
-            questionIds.add(q.Question_ID);
+            try {
+              const question = rowsToQuestion(questionRows);
 
-            // Track category counts for warnings
-            categoryCounts[q.Category] = (categoryCounts[q.Category] || 0) + 1;
-
-            // Answer_Type validation
-            const answerType = q.Answer_Type?.trim().toLowerCase();
-            if (!answerType) {
-              reject(`Row ${rowNum}: Answer_Type is required`);
-              return;
-            }
-            if (!VALID_ANSWER_TYPES.includes(answerType)) {
-              reject(
-                `Row ${rowNum}: Answer_Type must be one of: text, radio, multi_select (got "${q.Answer_Type}")`
-              );
-              return;
-            }
-
-            // Normalize Answer_Type to lowercase
-            q.Answer_Type = answerType;
-
-            // Answer_Options validation
-            const answerOptions = q.Answer_Options?.trim() || "";
-
-            if (answerType === "text") {
-              // Text type should have empty Answer_Options
-              if (answerOptions) {
-                reject(
-                  `Row ${rowNum}: Answer_Options must be empty for "text" type questions`
-                );
+              // Validate Id
+              if (!question.id) {
+                reject(`Rows ${rowNums}: Id is empty`);
                 return;
               }
-            } else {
-              // radio and multi_select require at least 2 options
-              if (!answerOptions) {
+
+              // Validate Section (used as category)
+              if (!question.section) {
+                reject(`Question ${question.id}: Section is empty`);
+                return;
+              }
+
+              // Track section counts for warnings
+              sectionCounts[question.section] =
+                (sectionCounts[question.section] || 0) + 1;
+
+              // Validate ItemType
+              const itemType = question.itemType as MyPreOpItemType;
+              if (!itemType) {
+                reject(`Question ${question.id}: ItemType is required`);
+                return;
+              }
+              if (!MYPREOP_ITEM_TYPES.includes(itemType)) {
                 reject(
-                  `Row ${rowNum}: Answer_Options is required for "${answerType}" type questions`
+                  `Question ${question.id}: ItemType must be one of: ${MYPREOP_ITEM_TYPES.join(", ")} (got "${question.itemType}")`
                 );
                 return;
               }
 
-              const options = answerOptions.split("|").map((o) => o.trim()).filter(Boolean);
-
-              if (options.length < 2) {
-                reject(
-                  `Row ${rowNum}: Answer_Options must have at least 2 options for "${answerType}" type (found ${options.length})`
-                );
-                return;
-              }
-
-              // Warnings (non-blocking)
-              if (options.length > 20) {
-                warnings.push(
-                  `Row ${rowNum} (${q.Question_ID}): More than 20 options may affect usability`
-                );
-              }
-
-              options.forEach((opt, idx) => {
-                if (opt.length > 100) {
+              // Validate options based on item type
+              if (ITEM_TYPES_REQUIRING_OPTIONS.includes(itemType)) {
+                // radio and checkbox require 2+ options
+                if (question.options.length < 2) {
+                  reject(
+                    `Question ${question.id}: ${itemType} type requires at least 2 options (found ${question.options.length})`
+                  );
+                  return;
+                }
+              } else if (ITEM_TYPES_NO_OPTIONS.includes(itemType)) {
+                // These types should have empty options (but we allow them for flexibility)
+                if (question.options.length > 0) {
                   warnings.push(
-                    `Row ${rowNum} (${q.Question_ID}): Option ${idx + 1} exceeds 100 characters`
+                    `Question ${question.id}: ${itemType} type typically has no options, but ${question.options.length} were provided`
+                  );
+                }
+              }
+
+              // Validate helper fields
+              if (question.hasHelper) {
+                if (!question.helperType) {
+                  warnings.push(
+                    `Question ${question.id}: HasHelper is TRUE but HelperType is empty`
+                  );
+                }
+                if (!question.helperValue) {
+                  warnings.push(
+                    `Question ${question.id}: HasHelper is TRUE but HelperValue is empty`
+                  );
+                }
+              }
+
+              // Validate Question text length (allow empty for text-paragraph, age)
+              if (question.questionText.length > 1000) {
+                reject(
+                  `Question ${question.id}: Question text exceeds 1000 character limit`
+                );
+                return;
+              }
+
+              // Warnings for many options
+              if (question.options.length > 20) {
+                warnings.push(
+                  `Question ${question.id}: More than 20 options may affect usability`
+                );
+              }
+
+              // Warnings for long options
+              question.options.forEach((opt, idx) => {
+                if (opt.value.length > 100) {
+                  warnings.push(
+                    `Question ${question.id}: Option ${idx + 1} exceeds 100 characters`
                   );
                 }
               });
+
+              questions.push(question);
+            } catch (error) {
+              reject(
+                `Error processing question ${id}: ${error instanceof Error ? error.message : "Unknown error"}`
+              );
+              return;
             }
           }
 
-          // Check for single-question categories (warning only)
-          Object.entries(categoryCounts).forEach(([cat, count]) => {
+          // Check for single-question sections (warning only)
+          Object.entries(sectionCounts).forEach(([section, count]) => {
             if (count === 1) {
-              warnings.push(`Category "${cat}" has only 1 question`);
+              warnings.push(`Section "${section}" has only 1 question`);
             }
           });
 
@@ -201,7 +221,9 @@ export default function UploadPage() {
       setValidationWarnings(result.warnings);
 
       if (result.warnings.length > 0) {
-        toast.success(`Validated ${result.questions.length} questions (${result.warnings.length} warnings)`);
+        toast.success(
+          `Validated ${result.questions.length} questions (${result.warnings.length} warnings)`
+        );
       } else {
         toast.success(`Validated ${result.questions.length} questions`);
       }
@@ -269,8 +291,14 @@ export default function UploadPage() {
 
       // Copy admin link to clipboard and show toast
       const adminUrl = `${window.location.origin}/admin/${data.adminLinkId}`;
-      await navigator.clipboard.writeText(adminUrl);
-      toast.success("Admin link copied to clipboard!", { duration: 4000 });
+      try {
+        await navigator.clipboard.writeText(adminUrl);
+        toast.success("Admin link copied to clipboard!", { duration: 4000 });
+      } catch {
+        toast.success(`Project created! Admin URL: ${adminUrl}`, {
+          duration: 8000,
+        });
+      }
 
       // Redirect to review page
       router.push(`/review/${data.trustLinkId}`);
@@ -320,10 +348,10 @@ export default function UploadPage() {
                 isDragging
                   ? "border-primary bg-primary/5"
                   : validationError
-                  ? "border-error bg-error/5"
-                  : file
-                  ? "border-success bg-success/5"
-                  : "border-base-300 hover:border-primary"
+                    ? "border-error bg-error/5"
+                    : file
+                      ? "border-success bg-success/5"
+                      : "border-base-300 hover:border-primary"
               }`}
             >
               <input
@@ -373,7 +401,7 @@ export default function UploadPage() {
                     Drop your CSV file here, or click to browse
                   </p>
                   <p className="text-sm text-base-content/60 mt-1">
-                    Maximum 500 questions, 5MB file size limit
+                    Maximum 2000 questions, 5MB file size limit
                   </p>
                 </div>
               )}
@@ -414,7 +442,9 @@ export default function UploadPage() {
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <span className="font-medium text-sm">Warnings (non-blocking)</span>
+                  <span className="font-medium text-sm">
+                    Warnings (non-blocking)
+                  </span>
                 </div>
                 <ul className="text-sm text-base-content/70 space-y-1">
                   {validationWarnings.map((warning, idx) => (
@@ -427,22 +457,61 @@ export default function UploadPage() {
 
           {/* CSV Format Info */}
           <div className="bg-base-200 rounded-lg p-4 mb-6">
-            <h3 className="font-medium mb-2">CSV Format Requirements</h3>
+            <h3 className="font-medium mb-2">CSV Format Requirements (MyPreOp Format)</h3>
             <p className="text-sm text-base-content/60 mb-2">
-              All 5 columns are required:
+              All 13 columns are required. Each option gets its own row (same Id repeated):
             </p>
             <ul className="text-sm text-base-content/60 mb-3 space-y-1">
-              <li><code className="bg-base-300 px-1 rounded">Question_ID</code> - Unique identifier</li>
-              <li><code className="bg-base-300 px-1 rounded">Category</code> - Question category</li>
-              <li><code className="bg-base-300 px-1 rounded">Question_Text</code> - The question (max 1000 chars)</li>
-              <li><code className="bg-base-300 px-1 rounded">Answer_Type</code> - <code className="bg-base-300 px-1 rounded">text</code>, <code className="bg-base-300 px-1 rounded">radio</code>, or <code className="bg-base-300 px-1 rounded">multi_select</code></li>
-              <li><code className="bg-base-300 px-1 rounded">Answer_Options</code> - Pipe-separated options (empty for text type)</li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">Id</code> - Question identifier (same Id for all options)
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">Section</code> - Section grouping
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">Page</code> - Page within section
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">ItemType</code> -{" "}
+                <code className="bg-base-300 px-1 rounded">radio</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">checkbox</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">text-field</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">text-area</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">text-paragraph</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">phone-number</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">age</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">number-input</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">allergy-list</code>
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">Question</code> - The question text
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">Option</code> - Single option value (one per row)
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">Characteristic</code> - Option identifier/tag
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">Required</code> - TRUE or FALSE
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">EnableWhen</code> - Conditional display logic
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">HasHelper</code> - TRUE or FALSE
+              </li>
+              <li>
+                <code className="bg-base-300 px-1 rounded">HelperType</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">HelperName</code>,{" "}
+                <code className="bg-base-300 px-1 rounded">HelperValue</code> - Helper content
+              </li>
             </ul>
             <code className="block bg-base-300 rounded p-3 text-sm font-mono overflow-x-auto whitespace-pre">
-{`Question_ID,Category,Question_Text,Answer_Type,Answer_Options
-Q001,Demographics,What is your age?,radio,"Under 18|18-30|31-50|Over 50"
-Q002,Health,Any allergies?,multi_select,"Peanuts|Dairy|Gluten|None"
-Q003,Feedback,Additional comments?,text,`}
+              {`Id,Section,Page,ItemType,Question,Option,Characteristic,Required,EnableWhen,HasHelper,HelperType,HelperName,HelperValue
+Q001,Who I Am,Personal Details,radio,Select your gender,Male,patient_is_male,TRUE,,FALSE,,,
+Q001,Who I Am,Personal Details,radio,Select your gender,Female,patient_is_female,TRUE,,FALSE,,,
+Q002,Who I Am,Personal Details,text-field,What is your name?,,patient_name,TRUE,,FALSE,,,`}
             </code>
           </div>
 

@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useParams } from "next/navigation";
+import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
+import SuggestionThreadModal from "@/components/questionnaire/SuggestionThreadModal";
+import ComponentChangesDisplay from "@/components/questionnaire/ComponentChangesDisplay";
+import { ComponentChanges } from "@/types/editPanel";
 
 interface Question {
   id: number;
@@ -20,6 +24,8 @@ interface Suggestion {
   status: "pending" | "approved" | "rejected";
   responseMessage: string | null;
   createdAt: string;
+  commentCount: number;
+  componentChanges: ComponentChanges | null;
   question: Question | null;
 }
 
@@ -59,6 +65,28 @@ export default function InstanceSuggestionsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Action modal state
+  const [actionModalOpen, setActionModalOpen] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
+  const [actionType, setActionType] = useState<"approve" | "reject" | "delete" | "change-status" | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<"pending" | "approved" | "rejected">("pending");
+  const [responseMessage, setResponseMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Thread modal state
+  const [threadModalOpen, setThreadModalOpen] = useState(false);
+  const [threadSuggestion, setThreadSuggestion] = useState<Suggestion | null>(null);
+
+  const openThreadModal = (suggestion: Suggestion) => {
+    setThreadSuggestion(suggestion);
+    setThreadModalOpen(true);
+  };
+
+  const closeThreadModal = () => {
+    setThreadModalOpen(false);
+    setThreadSuggestion(null);
+  };
+
   useEffect(() => {
     if (trustLinkId) {
       fetchSuggestions();
@@ -80,6 +108,104 @@ export default function InstanceSuggestionsPage() {
       toast.error("Failed to load suggestions");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openActionModal = (suggestion: Suggestion, action: "approve" | "reject" | "delete" | "change-status") => {
+    setSelectedSuggestion(suggestion);
+    setActionType(action);
+    setResponseMessage(suggestion.responseMessage || "");
+    setSelectedStatus(suggestion.status);
+    setActionModalOpen(true);
+  };
+
+  const closeActionModal = () => {
+    setActionModalOpen(false);
+    setSelectedSuggestion(null);
+    setActionType(null);
+    setResponseMessage("");
+    setSelectedStatus("pending");
+  };
+
+  const handleAction = async () => {
+    if (!selectedSuggestion || !actionType) return;
+
+    setIsSubmitting(true);
+    try {
+      if (actionType === "delete") {
+        const response = await fetch(
+          `/api/instance/${trustLinkId}/suggestions/${selectedSuggestion.id}`,
+          { method: "DELETE" }
+        );
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || "Failed to delete suggestion");
+        }
+        toast.success("Suggestion deleted");
+      } else if (actionType === "change-status") {
+        const response = await fetch(
+          `/api/instance/${trustLinkId}/suggestions/${selectedSuggestion.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: selectedStatus,
+              responseMessage: responseMessage.trim() || null,
+            }),
+          }
+        );
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || "Failed to update suggestion");
+        }
+        toast.success(`Status changed to ${selectedStatus}`);
+      } else {
+        const newStatus = actionType === "approve" ? "approved" : "rejected";
+        const response = await fetch(
+          `/api/instance/${trustLinkId}/suggestions/${selectedSuggestion.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: newStatus,
+              responseMessage: responseMessage.trim() || null,
+            }),
+          }
+        );
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || "Failed to update suggestion");
+        }
+        toast.success(`Suggestion ${newStatus}`);
+      }
+
+      closeActionModal();
+      fetchSuggestions();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickStatusChange = async (suggestion: Suggestion, newStatus: "approved" | "rejected") => {
+    try {
+      const response = await fetch(
+        `/api/instance/${trustLinkId}/suggestions/${suggestion.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Failed to update suggestion");
+      }
+      toast.success(`Suggestion ${newStatus}`);
+      fetchSuggestions();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
     }
   };
 
@@ -301,13 +427,23 @@ export default function InstanceSuggestionsPage() {
                       {formatDate(suggestion.createdAt)}
                     </span>
                   </div>
-                  <span
-                    className={`badge badge-sm ${
-                      statusConfig[suggestion.status].className
-                    }`}
-                  >
-                    {statusConfig[suggestion.status].label}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {suggestion.commentCount > 0 && (
+                      <span className="badge badge-sm badge-primary gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        {suggestion.commentCount}
+                      </span>
+                    )}
+                    <span
+                      className={`badge badge-sm ${
+                        statusConfig[suggestion.status].className
+                      }`}
+                    >
+                      {statusConfig[suggestion.status].label}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Question Info */}
@@ -330,10 +466,17 @@ export default function InstanceSuggestionsPage() {
                 {/* Suggestion Details */}
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium text-base-content/70 mb-1">
-                      Suggested Change:
+                    <p className="text-sm font-medium text-base-content/70 mb-2">
+                      Suggested Changes:
                     </p>
-                    <p className="text-base-content">{suggestion.suggestionText}</p>
+                    {suggestion.componentChanges ? (
+                      <ComponentChangesDisplay
+                        componentChanges={suggestion.componentChanges}
+                        fallbackText={suggestion.suggestionText}
+                      />
+                    ) : (
+                      <p className="text-base-content">{suggestion.suggestionText}</p>
+                    )}
                   </div>
 
                   <div>
@@ -353,6 +496,61 @@ export default function InstanceSuggestionsPage() {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-base-300">
+                  {suggestion.status === "pending" ? (
+                    <>
+                      <button
+                        onClick={() => handleQuickStatusChange(suggestion, "approved")}
+                        className="btn btn-sm btn-success btn-outline"
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleQuickStatusChange(suggestion, "rejected")}
+                        className="btn btn-sm btn-error btn-outline"
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => openActionModal(suggestion, "change-status")}
+                      className="btn btn-sm btn-ghost"
+                    >
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Change Status
+                    </button>
+                  )}
+                  <button
+                    onClick={() => openThreadModal(suggestion)}
+                    className="btn btn-sm btn-primary btn-outline"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    View Thread
+                    {suggestion.commentCount > 0 && ` (${suggestion.commentCount})`}
+                  </button>
+                  <button
+                    onClick={() => openActionModal(suggestion, "delete")}
+                    className="btn btn-sm btn-ghost text-error"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -382,6 +580,194 @@ export default function InstanceSuggestionsPage() {
           </div>
         )}
       </div>
+
+      {/* Action Modal */}
+      <Transition appear show={actionModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={closeActionModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-base-100 p-6 shadow-xl transition-all">
+                  {actionType === "delete" ? (
+                    <>
+                      <Dialog.Title as="h3" className="text-lg font-semibold text-error">
+                        Delete Suggestion
+                      </Dialog.Title>
+                      <p className="mt-2 text-sm text-base-content/70">
+                        Are you sure you want to delete this suggestion? This action cannot be undone.
+                      </p>
+                      <div className="mt-6 flex gap-3 justify-end">
+                        <button onClick={closeActionModal} className="btn btn-ghost">
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleAction}
+                          disabled={isSubmitting}
+                          className="btn btn-error"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <span className="loading loading-spinner loading-sm"></span>
+                              Deleting...
+                            </>
+                          ) : (
+                            "Delete"
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  ) : actionType === "change-status" ? (
+                    <>
+                      <Dialog.Title as="h3" className="text-lg font-semibold">
+                        Change Status
+                      </Dialog.Title>
+
+                      <div className="mt-4">
+                        <label className="label">
+                          <span className="label-text">New Status</span>
+                        </label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStatus("pending")}
+                            className={`btn btn-sm flex-1 ${selectedStatus === "pending" ? "btn-warning" : "btn-outline btn-warning"}`}
+                          >
+                            Pending
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStatus("approved")}
+                            className={`btn btn-sm flex-1 ${selectedStatus === "approved" ? "btn-success" : "btn-outline btn-success"}`}
+                          >
+                            Approved
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStatus("rejected")}
+                            className={`btn btn-sm flex-1 ${selectedStatus === "rejected" ? "btn-error" : "btn-outline btn-error"}`}
+                          >
+                            Rejected
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="label">
+                          <span className="label-text">Response Message (optional)</span>
+                        </label>
+                        <textarea
+                          placeholder="Add a response message to the submitter..."
+                          value={responseMessage}
+                          onChange={(e) => setResponseMessage(e.target.value)}
+                          className="textarea textarea-bordered w-full h-24"
+                          maxLength={1000}
+                        />
+                        <p className="text-xs text-base-content/50 mt-1">
+                          {responseMessage.length}/1000 characters
+                        </p>
+                      </div>
+
+                      <div className="mt-6 flex gap-3 justify-end">
+                        <button onClick={closeActionModal} className="btn btn-ghost">
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleAction}
+                          disabled={isSubmitting || selectedStatus === selectedSuggestion?.status}
+                          className="btn btn-primary"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <span className="loading loading-spinner loading-sm"></span>
+                              Saving...
+                            </>
+                          ) : (
+                            "Update Status"
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Dialog.Title as="h3" className="text-lg font-semibold">
+                        {actionType === "approve" ? "Approve" : "Reject"} Suggestion
+                      </Dialog.Title>
+
+                      <div className="mt-4">
+                        <label className="label">
+                          <span className="label-text">Response Message (optional)</span>
+                        </label>
+                        <textarea
+                          placeholder="Add a response message to the submitter..."
+                          value={responseMessage}
+                          onChange={(e) => setResponseMessage(e.target.value)}
+                          className="textarea textarea-bordered w-full h-24"
+                          maxLength={1000}
+                        />
+                        <p className="text-xs text-base-content/50 mt-1">
+                          {responseMessage.length}/1000 characters
+                        </p>
+                      </div>
+
+                      <div className="mt-6 flex gap-3 justify-end">
+                        <button onClick={closeActionModal} className="btn btn-ghost">
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleAction}
+                          disabled={isSubmitting}
+                          className={`btn ${actionType === "approve" ? "btn-success" : "btn-error"}`}
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <span className="loading loading-spinner loading-sm"></span>
+                              Saving...
+                            </>
+                          ) : actionType === "approve" ? (
+                            "Approve"
+                          ) : (
+                            "Reject"
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Thread Modal */}
+      <SuggestionThreadModal
+        isOpen={threadModalOpen}
+        onClose={closeThreadModal}
+        suggestion={threadSuggestion}
+        trustLinkId={trustLinkId}
+        authorType="admin"
+        onCommentAdded={fetchSuggestions}
+      />
     </div>
   );
 }

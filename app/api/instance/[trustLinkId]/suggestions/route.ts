@@ -5,12 +5,40 @@ interface Params {
   params: Promise<{ trustLinkId: string }>;
 }
 
+/**
+ * Component-level changes structure for structured suggestions
+ */
+interface ComponentChanges {
+  settings?: {
+    required?: { from: boolean; to: boolean };
+  };
+  content?: {
+    questionText?: { from: string; to: string };
+    answerType?: { from: string; to: string };
+    options?: {
+      added: Array<{ text: string; characteristic: string }>;
+      modified: Array<{ index: number; from: string; to: string }>;
+      removed: number[];
+    };
+  };
+  help?: {
+    hasHelper?: { from: boolean; to: boolean };
+    helperName?: { from: string | null; to: string };
+    helperValue?: { from: string | null; to: string };
+    helperType?: { from: string | null; to: string };
+  };
+  logic?: {
+    description: string;
+  };
+}
+
 interface CreateSuggestionRequest {
   instanceQuestionId: number;
   submitterName: string;
   submitterEmail?: string | null;
   suggestionText: string;
   reason: string;
+  componentChanges?: ComponentChanges; // NEW: structured component changes
 }
 
 export async function GET(req: NextRequest, { params }: Params) {
@@ -32,7 +60,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Get all suggestions for this instance with question details
+    // Get all suggestions for this instance's questions using a single join query
     const { data: suggestions, error: suggestionsError } = await supabase
       .from("instance_suggestions")
       .select(`
@@ -45,11 +73,13 @@ export async function GET(req: NextRequest, { params }: Params) {
         response_message,
         created_at,
         instance_question_id,
-        instance_questions (
+        component_changes,
+        instance_questions!inner (
           id,
           question_id,
           category,
-          question_text
+          question_text,
+          instance_id
         )
       `)
       .eq("instance_questions.instance_id", instance.id)
@@ -63,6 +93,24 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
+    // Get comment counts for all suggestions
+    const suggestionIds = suggestions?.map((s) => s.id) || [];
+    let commentCounts: Record<number, number> = {};
+
+    if (suggestionIds.length > 0) {
+      const { data: commentData, error: commentError } = await supabase
+        .from("suggestion_comments")
+        .select("suggestion_id")
+        .in("suggestion_id", suggestionIds);
+
+      if (!commentError && commentData) {
+        commentCounts = commentData.reduce((acc, row) => {
+          acc[row.suggestion_id] = (acc[row.suggestion_id] || 0) + 1;
+          return acc;
+        }, {} as Record<number, number>);
+      }
+    }
+
     // Format response
     const formattedSuggestions = suggestions?.map((s: any) => ({
       id: s.id,
@@ -73,6 +121,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       status: s.status,
       responseMessage: s.response_message,
       createdAt: s.created_at,
+      commentCount: commentCounts[s.id] || 0,
+      componentChanges: s.component_changes || null,
       question: s.instance_questions ? {
         id: s.instance_questions.id,
         questionId: s.instance_questions.question_id,
@@ -100,7 +150,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { trustLinkId } = await params;
     const body: CreateSuggestionRequest = await req.json();
-    const { instanceQuestionId, submitterName, submitterEmail, suggestionText, reason } = body;
+    const { instanceQuestionId, submitterName, submitterEmail, suggestionText, reason, componentChanges } = body;
 
     // Validate required fields
     if (!instanceQuestionId) {
@@ -185,17 +235,24 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Create the suggestion
+    // Create the suggestion with optional component changes
+    const insertData: Record<string, unknown> = {
+      instance_question_id: instanceQuestionId,
+      submitter_name: submitterName.trim(),
+      submitter_email: submitterEmail?.trim() || null,
+      suggestion_text: suggestionText.trim(),
+      reason: reason.trim(),
+      status: "pending",
+    };
+
+    // Add component_changes if provided
+    if (componentChanges && Object.keys(componentChanges).length > 0) {
+      insertData.component_changes = componentChanges;
+    }
+
     const { data: suggestion, error: suggestionError } = await supabase
       .from("instance_suggestions")
-      .insert({
-        instance_question_id: instanceQuestionId,
-        submitter_name: submitterName.trim(),
-        submitter_email: submitterEmail?.trim() || null,
-        suggestion_text: suggestionText.trim(),
-        reason: reason.trim(),
-        status: "pending",
-      })
+      .insert(insertData)
       .select()
       .single();
 
