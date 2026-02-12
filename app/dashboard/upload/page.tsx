@@ -38,8 +38,9 @@ export default function DashboardUploadPage() {
       Papa.parse<MyPreOpCsvRow>(file, {
         header: true,
         skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
         complete: (results) => {
-          const headers = results.meta.fields || [];
+          const headers = (results.meta.fields || []).filter((h) => h.length > 0);
 
           // Check for required columns
           const missingColumns = MYPREOP_REQUIRED_COLUMNS.filter(
