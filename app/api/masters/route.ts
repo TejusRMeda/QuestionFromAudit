@@ -79,57 +79,28 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createClient();
 
-    // Check for authenticated user (optional - allows both anonymous and logged-in uploads)
+    // Require authenticated user
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Create master questionnaire
-    // Try with user_id first, fall back to without if column doesn't exist
-    let master;
-    let masterError;
-
-    if (user) {
-      // Try inserting with user_id (requires migration 005_user_masters.sql)
-      const result = await supabase
-        .from("master_questionnaires")
-        .insert({
-          name: name.trim(),
-          admin_link_id: adminLinkId,
-          user_id: user.id,
-        })
-        .select()
-        .single();
-
-      // If user_id column doesn't exist, retry without it
-      if (result.error?.message?.includes("user_id")) {
-        const fallbackResult = await supabase
-          .from("master_questionnaires")
-          .insert({
-            name: name.trim(),
-            admin_link_id: adminLinkId,
-          })
-          .select()
-          .single();
-        master = fallbackResult.data;
-        masterError = fallbackResult.error;
-      } else {
-        master = result.data;
-        masterError = result.error;
-      }
-    } else {
-      // Anonymous user - no user_id
-      const result = await supabase
-        .from("master_questionnaires")
-        .insert({
-          name: name.trim(),
-          admin_link_id: adminLinkId,
-        })
-        .select()
-        .single();
-      master = result.data;
-      masterError = result.error;
+    if (!user) {
+      return NextResponse.json(
+        { message: "Authentication required" },
+        { status: 401 }
+      );
     }
+
+    // Create master questionnaire
+    const { data: master, error: masterError } = await supabase
+      .from("master_questionnaires")
+      .insert({
+        name: name.trim(),
+        admin_link_id: adminLinkId,
+        user_id: user.id,
+      })
+      .select()
+      .single();
 
     if (masterError) {
       console.error("Master creation error:", masterError);

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/libs/supabase/server";
 import ButtonAccount from "@/components/ButtonAccount";
+import DashboardQuestionnaires from "@/components/DashboardQuestionnaires";
 
 export const dynamic = "force-dynamic";
 
@@ -102,64 +103,7 @@ export default async function Dashboard() {
             <h2 className="text-xl font-semibold">Your Questionnaires</h2>
           </div>
 
-          {questionnaires.length === 0 ? (
-            <div className="p-12 text-center">
-              <svg
-                className="w-16 h-16 mx-auto text-base-content/20 mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <h3 className="text-lg font-medium text-base-content/60 mb-2">
-                No questionnaires yet
-              </h3>
-              <p className="text-base-content/40 mb-4">
-                Upload your first master CSV to get started
-              </p>
-              <Link href="/dashboard/upload" className="btn btn-primary">
-                Upload CSV
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Questions</th>
-                    <th>Created</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {questionnaires.map((q) => (
-                    <tr key={q.id} className="hover">
-                      <td className="font-medium">{q.name}</td>
-                      <td>{q.question_count}</td>
-                      <td className="text-base-content/60">
-                        {new Date(q.created_at).toLocaleDateString()}
-                      </td>
-                      <td>
-                        <Link
-                          href={`/masters/${q.admin_link_id}`}
-                          className="btn btn-sm btn-ghost"
-                        >
-                          Manage
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DashboardQuestionnaires questionnaires={questionnaires} />
         </div>
       </div>
     </main>

@@ -25,8 +25,8 @@ export default function Home() {
               </div>
               <span className="font-semibold text-lg">Questionnaire Audit</span>
             </div>
-            <Link href="/masters/upload" className="btn btn-primary btn-sm">
-              Get Started
+            <Link href="/signin" className="btn btn-primary btn-sm">
+              Login
             </Link>
           </div>
         </div>
@@ -44,7 +44,7 @@ export default function Home() {
               No accounts needed - just share a link.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/masters/upload" className="btn btn-primary btn-lg">
+              <Link href="/dashboard" className="btn btn-primary btn-lg">
                 <svg
                   className="w-5 h-5 mr-2"
                   fill="none"
@@ -60,7 +60,7 @@ export default function Home() {
                 </svg>
                 Upload Master Questionnaire
               </Link>
-              <Link href="/upload" className="btn btn-outline btn-lg">
+              <Link href="/dashboard" className="btn btn-outline btn-lg">
                 <svg
                   className="w-5 h-5 mr-2"
                   fill="none"
@@ -257,7 +257,7 @@ export default function Home() {
             <p className="text-base-content/60 mb-6">
               Upload your master questionnaire and share instances with multiple trusts.
             </p>
-            <Link href="/masters/upload" className="btn btn-primary">
+            <Link href="/dashboard" className="btn btn-primary">
               Upload Master Questionnaire
             </Link>
           </div>

@@ -71,3 +71,72 @@ export async function GET(req: NextRequest, { params }: Params) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest, { params }: Params) {
+  try {
+    const { adminLinkId } = await params;
+
+    if (!adminLinkId) {
+      return NextResponse.json(
+        { message: "Admin link ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Verify the user owns this questionnaire
+    const { data: master, error: fetchError } = await supabase
+      .from("master_questionnaires")
+      .select("id, user_id")
+      .eq("admin_link_id", adminLinkId)
+      .single();
+
+    if (fetchError || !master) {
+      return NextResponse.json(
+        { message: "Questionnaire not found" },
+        { status: 404 }
+      );
+    }
+
+    if (master.user_id !== user.id) {
+      return NextResponse.json(
+        { message: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    // Delete the master questionnaire (cascades handle related data)
+    const { error: deleteError } = await supabase
+      .from("master_questionnaires")
+      .delete()
+      .eq("id", master.id);
+
+    if (deleteError) {
+      console.error("Error deleting questionnaire:", deleteError);
+      return NextResponse.json(
+        { message: "Failed to delete questionnaire" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: "Questionnaire deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting questionnaire:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
