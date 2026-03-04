@@ -28,6 +28,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 		>
 			<head>
 				<meta httpEquiv="Content-Language" content="en" />
+				{process.env.NODE_ENV === "development" && (
+					<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async />
+				)}
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 				<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
