@@ -127,6 +127,12 @@ export default function MasterDashboardPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-base-100 rounded-xl shadow-lg p-6 mb-6">
+          <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-base-content mb-4">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Dashboard
+          </Link>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold">{data.master.name}</h1>
