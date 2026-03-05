@@ -283,8 +283,8 @@ export default function DashboardUploadPage() {
 
       toast.success("Master questionnaire created successfully!");
 
-      // Redirect back to dashboard
-      router.push("/dashboard");
+      // Redirect to questionnaires list
+      router.push("/dashboard/questionnaires");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
       setIsUploading(false);
@@ -296,7 +296,7 @@ export default function DashboardUploadPage() {
       <div className="max-w-2xl mx-auto">
         {/* Back to Dashboard link */}
         <Link
-          href="/dashboard"
+          href="/dashboard/questionnaires"
           className="inline-flex items-center gap-2 text-base-content/60 hover:text-base-content mb-6"
         >
           <svg
