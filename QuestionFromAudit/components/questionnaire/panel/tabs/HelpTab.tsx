@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { SafeHtml } from "@/components/ui/safe-html";
 
 interface HelpTabProps {
   question: EditableQuestion;
@@ -149,9 +150,9 @@ export default function HelpTab({
                       {currentHelperValue}
                     </a>
                   ) : (
-                    <div
+                    <SafeHtml
+                      content={currentHelperValue}
                       className="text-sm prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: currentHelperValue }}
                     />
                   )}
                 </div>

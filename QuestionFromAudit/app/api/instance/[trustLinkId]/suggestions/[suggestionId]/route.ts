@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/libs/supabase/server";
 
 interface Params {
   params: Promise<{ trustLinkId: string; suggestionId: string }>;
@@ -40,12 +40,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const authClient = await createClient();
+    const supabase = createServiceClient();
 
-    // Verify the trust instance exists
+    // Require authentication for status changes (admin action)
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { message: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    // Verify the trust instance exists and check ownership
     const { data: instance, error: instanceError } = await supabase
       .from("trust_instances")
-      .select("id")
+      .select("id, submission_status, master_questionnaires!inner(user_id)")
       .eq("trust_link_id", trustLinkId)
       .single();
 
@@ -53,6 +63,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { message: "Questionnaire not found" },
         { status: 404 }
+      );
+    }
+
+    // Verify the authenticated user owns the parent master
+    const masterData = instance.master_questionnaires as unknown as { user_id: string };
+    if (masterData.user_id !== user.id) {
+      return NextResponse.json(
+        { message: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    // Block mutations on submitted instances
+    if (instance.submission_status === "submitted") {
+      return NextResponse.json(
+        { message: "This review has already been submitted." },
+        { status: 403 }
       );
     }
 
@@ -139,12 +166,12 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Verify the trust instance exists
     const { data: instance, error: instanceError } = await supabase
       .from("trust_instances")
-      .select("id")
+      .select("id, submission_status")
       .eq("trust_link_id", trustLinkId)
       .single();
 
@@ -152,6 +179,14 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { message: "Questionnaire not found" },
         { status: 404 }
+      );
+    }
+
+    // Block mutations on submitted instances
+    if (instance.submission_status === "submitted") {
+      return NextResponse.json(
+        { message: "This review has already been submitted." },
+        { status: 403 }
       );
     }
 

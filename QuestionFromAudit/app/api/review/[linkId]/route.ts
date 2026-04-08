@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/libs/supabase/server";
 
 export async function GET(
   req: NextRequest,
@@ -15,7 +15,7 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Find project by trust_link_id
     const { data: project, error: projectError } = await supabase

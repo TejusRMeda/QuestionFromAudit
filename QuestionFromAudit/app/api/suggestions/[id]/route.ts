@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/libs/supabase/server";
 
 interface UpdateSuggestionRequest {
   status?: "pending" | "approved" | "rejected";
@@ -22,6 +22,18 @@ export async function PUT(
       );
     }
 
+    const authClient = await createClient();
+    const supabase = createServiceClient();
+
+    // Require authentication for status/comment updates
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { message: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     const body: UpdateSuggestionRequest = await req.json();
     const { status, internalComment, responseMessage } = body;
 
@@ -32,8 +44,6 @@ export async function PUT(
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
 
     // Verify the suggestion exists
     const { data: existingSuggestion, error: fetchError } = await supabase
@@ -105,7 +115,7 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Get suggestion
     const { data: suggestion, error } = await supabase

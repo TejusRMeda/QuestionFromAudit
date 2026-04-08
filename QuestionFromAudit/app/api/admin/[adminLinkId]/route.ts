@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/libs/supabase/server";
 
 export async function GET(
   req: NextRequest,
@@ -15,7 +15,17 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient();
+    const authClient = await createClient();
+    const supabase = createServiceClient();
+
+    // Require authentication
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { message: "Authentication required" },
+        { status: 401 }
+      );
+    }
 
     // Find project by admin_link_id
     const { data: project, error: projectError } = await supabase

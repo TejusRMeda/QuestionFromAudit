@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/libs/supabase/server";
 
 interface Params {
   params: Promise<{ trustLinkId: string; suggestionId: string }>;
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Verify the trust instance exists
     const { data: instance, error: instanceError } = await supabase
@@ -124,13 +124,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!authorType || !["admin", "trust_user"].includes(authorType)) {
-      return NextResponse.json(
-        { message: "Author type must be 'admin' or 'trust_user'" },
-        { status: 400 }
-      );
-    }
-
     if (!authorName?.trim()) {
       return NextResponse.json(
         { message: "Author name is required" },
@@ -168,12 +161,13 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const authClient = await createClient();
+    const supabase = createServiceClient();
 
-    // Verify the trust instance exists
+    // Verify the trust instance exists and get the master owner
     const { data: instance, error: instanceError } = await supabase
       .from("trust_instances")
-      .select("id")
+      .select("id, master_id, master_questionnaires!inner(user_id)")
       .eq("trust_link_id", trustLinkId)
       .single();
 
@@ -183,6 +177,13 @@ export async function POST(req: NextRequest, { params }: Params) {
         { status: 404 }
       );
     }
+
+    // Derive authorType server-side: authenticated owner = admin, otherwise trust_user
+    const { data: { user } } = await authClient.auth.getUser();
+    const masterData = instance.master_questionnaires as { user_id?: string } | null;
+    const resolvedAuthorType = (user && masterData?.user_id === user.id)
+      ? "admin"
+      : "trust_user";
 
     // Verify the suggestion exists and belongs to this instance
     const { data: suggestion, error: suggestionError } = await supabase
@@ -218,7 +219,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       .from("suggestion_comments")
       .insert({
         suggestion_id: suggestionIdNum,
-        author_type: authorType,
+        author_type: resolvedAuthorType,
         author_name: authorName.trim(),
         author_email: authorEmail?.trim() || null,
         message: message.trim(),

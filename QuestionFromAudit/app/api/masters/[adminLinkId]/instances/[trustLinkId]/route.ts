@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/libs/supabase/server";
 
 interface Params {
   params: Promise<{ adminLinkId: string; trustLinkId: string }>;
@@ -16,11 +16,12 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const authClient = await createClient();
+    const supabase = createServiceClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await authClient.auth.getUser();
 
     if (!user) {
       return NextResponse.json(

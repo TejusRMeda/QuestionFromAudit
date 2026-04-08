@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/libs/supabase/server";
 
 interface Params {
   params: Promise<{ questionId: string }>;
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Fetch suggestions for this instance question
     const { data: suggestions, error } = await supabase

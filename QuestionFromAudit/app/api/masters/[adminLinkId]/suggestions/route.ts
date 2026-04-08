@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/libs/supabase/server";
 
 interface Params {
   params: Promise<{ adminLinkId: string }>;
@@ -31,12 +31,22 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const authClient = await createClient();
+    const supabase = createServiceClient();
+
+    // Require authentication
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { message: "Authentication required" },
+        { status: 401 }
+      );
+    }
 
     // Fetch master questionnaire
     const { data: master, error: masterError } = await supabase
       .from("master_questionnaires")
-      .select("id, name")
+      .select("id, name, user_id")
       .eq("admin_link_id", adminLinkId)
       .single();
 
@@ -44,6 +54,14 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { message: "Master questionnaire not found" },
         { status: 404 }
+      );
+    }
+
+    // Verify ownership
+    if (master.user_id !== user.id) {
+      return NextResponse.json(
+        { message: "Forbidden" },
+        { status: 403 }
       );
     }
 

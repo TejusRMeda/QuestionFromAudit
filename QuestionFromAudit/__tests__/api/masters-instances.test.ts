@@ -7,6 +7,7 @@ import {
 const mockCreateClient = vi.fn();
 vi.mock("@/libs/supabase/server", () => ({
   createClient: () => mockCreateClient(),
+  createServiceClient: () => mockCreateClient(),
 }));
 
 vi.mock("crypto", () => ({
@@ -56,6 +57,7 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
 
   it("returns 404 when master questionnaire not found", async () => {
     const mockClient = createSequentialMockClient({
+      user: { id: "user-123" },
       calls: [
         {
           table: "master_questionnaires",
@@ -63,7 +65,7 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callPost({ trustName: "NHS Trust" });
     expect(res.status).toBe(404);
@@ -73,10 +75,11 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
 
   it("returns success with trustLinkId, trustName, questionCount", async () => {
     const mockClient = createSequentialMockClient({
+      user: { id: "user-123" },
       calls: [
         {
           table: "master_questionnaires",
-          response: { data: { id: "master-1" } },
+          response: { data: { id: "master-1", user_id: "user-123" } },
         },
         {
           table: "master_questions",
@@ -92,7 +95,7 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callPost({ trustName: "NHS Trust" });
     expect(res.status).toBe(200);
@@ -104,10 +107,11 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
 
   it("returns 500 when instance creation fails", async () => {
     const mockClient = createSequentialMockClient({
+      user: { id: "user-123" },
       calls: [
         {
           table: "master_questionnaires",
-          response: { data: { id: "master-1" } },
+          response: { data: { id: "master-1", user_id: "user-123" } },
         },
         {
           table: "master_questions",
@@ -119,7 +123,7 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callPost({ trustName: "NHS Trust" });
     expect(res.status).toBe(500);
@@ -129,10 +133,11 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
 
   it("rolls back instance if question copy fails", async () => {
     const mockClient = createSequentialMockClient({
+      user: { id: "user-123" },
       calls: [
         {
           table: "master_questionnaires",
-          response: { data: { id: "master-1" } },
+          response: { data: { id: "master-1", user_id: "user-123" } },
         },
         {
           table: "master_questions",
@@ -153,7 +158,7 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callPost({ trustName: "NHS Trust" });
     expect(res.status).toBe(500);
@@ -165,10 +170,11 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
 
   it("returns 500 when fetching master questions fails", async () => {
     const mockClient = createSequentialMockClient({
+      user: { id: "user-123" },
       calls: [
         {
           table: "master_questionnaires",
-          response: { data: { id: "master-1" } },
+          response: { data: { id: "master-1", user_id: "user-123" } },
         },
         {
           table: "master_questions",
@@ -176,7 +182,7 @@ describe("POST /api/masters/[adminLinkId]/instances", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callPost({ trustName: "NHS Trust" });
     expect(res.status).toBe(500);

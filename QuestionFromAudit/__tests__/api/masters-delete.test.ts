@@ -8,6 +8,7 @@ import {
 const mockCreateClient = vi.fn();
 vi.mock("@/libs/supabase/server", () => ({
   createClient: () => mockCreateClient(),
+  createServiceClient: () => mockCreateClient(),
 }));
 
 import { DELETE } from "@/app/api/masters/[adminLinkId]/route";
@@ -25,7 +26,7 @@ describe("DELETE /api/masters/[adminLinkId]", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    mockCreateClient.mockResolvedValue(
+    mockCreateClient.mockReturnValue(
       createMockSupabaseClient({ user: null })
     );
 
@@ -45,7 +46,7 @@ describe("DELETE /api/masters/[adminLinkId]", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callDelete();
     expect(res.status).toBe(404);
@@ -63,7 +64,7 @@ describe("DELETE /api/masters/[adminLinkId]", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callDelete();
     expect(res.status).toBe(403);
@@ -85,7 +86,7 @@ describe("DELETE /api/masters/[adminLinkId]", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callDelete();
     expect(res.status).toBe(200);
@@ -107,7 +108,7 @@ describe("DELETE /api/masters/[adminLinkId]", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const res = await callDelete();
     expect(res.status).toBe(500);

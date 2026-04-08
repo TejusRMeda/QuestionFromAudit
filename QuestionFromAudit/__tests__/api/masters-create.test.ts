@@ -9,6 +9,7 @@ import {
 const mockCreateClient = vi.fn();
 vi.mock("@/libs/supabase/server", () => ({
   createClient: () => mockCreateClient(),
+  createServiceClient: () => mockCreateClient(),
 }));
 
 // Mock crypto.randomBytes for deterministic link IDs
@@ -47,7 +48,7 @@ describe("POST /api/masters", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    mockCreateClient.mockResolvedValue(
+    mockCreateClient.mockReturnValue(
       createMockSupabaseClient({ user: null })
     );
 
@@ -191,7 +192,7 @@ describe("POST /api/masters", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const req = createNextRequest("/api/masters", {
       method: "POST",
@@ -224,7 +225,7 @@ describe("POST /api/masters", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const req = createNextRequest("/api/masters", {
       method: "POST",
@@ -249,7 +250,7 @@ describe("POST /api/masters", () => {
         },
       ],
     });
-    mockCreateClient.mockResolvedValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     const req = createNextRequest("/api/masters", {
       method: "POST",

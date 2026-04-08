@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/libs/supabase/server";
 
 interface Params {
   params: Promise<{ trustLinkId: string }>;
@@ -8,7 +8,7 @@ interface Params {
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { trustLinkId } = await params;
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Get the instance
     const { data: instance, error: instanceError } = await supabase

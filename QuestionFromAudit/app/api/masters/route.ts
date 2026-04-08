@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/libs/supabase/server";
 import crypto from "crypto";
 import {
   ParsedQuestion,
@@ -78,12 +78,13 @@ export async function POST(req: NextRequest) {
     // Generate secure admin link ID
     const adminLinkId = generateSecureLinkId();
 
-    const supabase = await createClient();
+    const authClient = await createClient();
+    const supabase = createServiceClient();
 
     // Require authenticated user
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await authClient.auth.getUser();
 
     if (!user) {
       return NextResponse.json(

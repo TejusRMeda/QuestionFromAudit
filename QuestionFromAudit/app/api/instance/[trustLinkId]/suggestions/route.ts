@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/libs/supabase/server";
 
 interface Params {
   params: Promise<{ trustLinkId: string }>;
@@ -44,7 +44,7 @@ interface CreateSuggestionRequest {
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { trustLinkId } = await params;
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Get the instance
     const { data: instance, error: instanceError } = await supabase
@@ -214,12 +214,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Verify the trust link and question belong together
     const { data: instance, error: instanceError } = await supabase
       .from("trust_instances")
-      .select("id")
+      .select("id, submission_status")
       .eq("trust_link_id", trustLinkId)
       .single();
 
@@ -227,6 +227,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { message: "Questionnaire not found" },
         { status: 404 }
+      );
+    }
+
+    // Block mutations on submitted instances
+    if (instance.submission_status === "submitted") {
+      return NextResponse.json(
+        { message: "This review has already been submitted." },
+        { status: 403 }
       );
     }
 

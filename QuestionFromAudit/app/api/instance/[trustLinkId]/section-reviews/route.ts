@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/libs/supabase/server";
 
 interface Params {
   params: Promise<{ trustLinkId: string }>;
@@ -8,7 +8,7 @@ interface Params {
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { trustLinkId } = await params;
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     const { data: instance, error: instanceError } = await supabase
       .from("trust_instances")
@@ -58,11 +58,11 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     const { data: instance, error: instanceError } = await supabase
       .from("trust_instances")
-      .select("id")
+      .select("id, submission_status")
       .eq("trust_link_id", trustLinkId)
       .single();
 
@@ -70,6 +70,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { message: "Questionnaire not found" },
         { status: 404 }
+      );
+    }
+
+    // Block mutations on submitted instances
+    if (instance.submission_status === "submitted") {
+      return NextResponse.json(
+        { message: "This review has already been submitted." },
+        { status: 403 }
       );
     }
 
@@ -119,11 +127,11 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     const { data: instance, error: instanceError } = await supabase
       .from("trust_instances")
-      .select("id")
+      .select("id, submission_status")
       .eq("trust_link_id", trustLinkId)
       .single();
 
@@ -131,6 +139,14 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { message: "Questionnaire not found" },
         { status: 404 }
+      );
+    }
+
+    // Block mutations on submitted instances
+    if (instance.submission_status === "submitted") {
+      return NextResponse.json(
+        { message: "This review has already been submitted." },
+        { status: 403 }
       );
     }
 

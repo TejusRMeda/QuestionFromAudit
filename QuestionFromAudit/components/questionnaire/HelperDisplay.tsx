@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SafeHtml } from "@/components/ui/safe-html";
 
 interface HelperDisplayProps {
   helperType: string | null;
@@ -72,9 +73,9 @@ export default function HelperDisplay({
               </svg>
             </a>
           ) : (
-            <div
+            <SafeHtml
+              content={helperValue}
               className="text-sm text-slate-600 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: helperValue }}
             />
           )}
         </div>

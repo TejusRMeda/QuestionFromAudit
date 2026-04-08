@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/libs/supabase/server";
 import Papa from "papaparse";
 import { CASOD_COLUMNS } from "@/types/casodExport";
 import {
@@ -19,12 +19,22 @@ export async function GET(req: NextRequest, { params }: Params) {
     const { searchParams } = new URL(req.url);
     const statusFilter = searchParams.get("status") || "all";
 
-    const supabase = await createClient();
+    const authClient = await createClient();
+    const supabase = createServiceClient();
 
-    // Get the instance
+    // Require authentication (admin-only export)
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { message: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    // Get the instance and verify ownership
     const { data: instance, error: instanceError } = await supabase
       .from("trust_instances")
-      .select("id, trust_name")
+      .select("id, trust_name, master_questionnaires!inner(user_id)")
       .eq("trust_link_id", trustLinkId)
       .single();
 
@@ -32,6 +42,15 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { message: "Questionnaire not found" },
         { status: 404 }
+      );
+    }
+
+    // Verify ownership
+    const masterData = instance.master_questionnaires as unknown as { user_id: string };
+    if (masterData.user_id !== user.id) {
+      return NextResponse.json(
+        { message: "Forbidden" },
+        { status: 403 }
       );
     }
 
