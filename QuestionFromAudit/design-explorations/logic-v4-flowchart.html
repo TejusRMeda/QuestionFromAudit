@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logic View — Horizontal Flowchart</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --brand: #4A90A4;
+    --brand-light: #E8F4F8;
+    --brand-dark: #3A7388;
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --border: #E2E5EA;
+    --border-light: #EEF0F3;
+    --text-primary: #1A1F2B;
+    --text-secondary: #6B7280;
+    --text-dim: #9CA3AF;
+    --line-color: #B0BEC5;
+    --cat-identity: #4A90A4;
+    --cat-identity-bg: #EDF7FA;
+    --cat-allergies: #DC2626;
+    --cat-allergies-bg: #FEF2F2;
+    --cat-medications: #059669;
+    --cat-medications-bg: #ECFDF5;
+    --badge-and-bg: #FEF3C7;
+    --badge-and-text: #92400E;
+    --badge-or-bg: #DBEAFE;
+    --badge-or-text: #1E40AF;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    --radius: 12px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HEADER / TOOLBAR */
+  .toolbar {
+    height: 52px;
+    background: var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 12px; }
+  .toolbar-logo {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .toolbar-logo svg { width: 16px; height: 16px; color: white; }
+  .toolbar-title { font-size: 14px; font-weight: 600; color: white; letter-spacing: -0.01em; }
+  .toolbar-sub { font-size: 11px; color: rgba(255,255,255,0.65); }
+
+  .toolbar-center { display: flex; align-items: center; gap: 8px; }
+
+  .q-select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 12px;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    cursor: pointer;
+    min-width: 280px;
+    outline: none;
+    backdrop-filter: blur(4px);
+  }
+  .q-select:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); }
+  .q-select option { background: var(--brand-dark); color: white; }
+
+  .toolbar-right { display: flex; align-items: center; gap: 6px; }
+
+  .zoom-btn {
+    width: 30px; height: 30px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 16px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 150ms;
+  }
+  .zoom-btn:hover { background: rgba(255,255,255,0.18); }
+  .zoom-level {
+    font-size: 11px; color: rgba(255,255,255,0.6);
+    min-width: 36px; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* BREADCRUMB */
+  .breadcrumb-bar {
+    height: 36px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .breadcrumb-item {
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: color 150ms;
+  }
+  .breadcrumb-item:hover { color: var(--brand); }
+  .breadcrumb-item.active { color: var(--brand); font-weight: 600; }
+  .breadcrumb-sep { color: var(--border); }
+  .breadcrumb-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin-right: 4px;
+  }
+
+  /* CANVAS */
+  .canvas {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    background:
+      radial-gradient(circle at 1px 1px, #ECEEF1 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  .canvas-inner {
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    position: relative;
+  }
+
+  /* FLOW LAYOUT - horizontal */
+  .flow-container {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  .flow-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .flow-column-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  /* SVG connector area */
+  .flow-connectors {
+    position: relative;
+    width: 140px;
+    min-height: 80px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .flow-connectors svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow: visible;
+  }
+
+  /* CARDS - narrower, taller */
+  .card {
+    width: 210px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+    transition: all 200ms;
+    cursor: default;
+    box-shadow: var(--shadow-sm);
+  }
+  .card:hover { box-shadow: var(--shadow-md); }
+  .card.hero {
+    width: 260px;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(74,144,164,0.12), var(--shadow-md);
+  }
+  .card.parent, .card.child { cursor: pointer; }
+  .card.parent:hover, .card.child:hover {
+    border-color: var(--brand);
+    transform: translateY(-2px);
+  }
+
+  /* Category pastel background */
+  .card-cat-bg {
+    padding: 6px 14px;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .card-cat-bg.identity { background: var(--cat-identity-bg); color: #2C6B7D; }
+  .card-cat-bg.allergies { background: var(--cat-allergies-bg); color: #991B1B; }
+  .card-cat-bg.medications { background: var(--cat-medications-bg); color: #065F46; }
+
+  .card-body {
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: #F3F4F6;
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .card-type {
+    width: 14px; height: 14px;
+    color: var(--text-dim);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-type svg { width: 12px; height: 12px; }
+
+  .card-sug {
+    font-size: 9px; font-weight: 600;
+    color: var(--brand-dark); background: var(--brand-light);
+    padding: 2px 6px; border-radius: 4px;
+    margin-left: auto;
+  }
+
+  .card-text {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--text-primary);
+  }
+  .card.hero .card-text { font-size: 14px; font-weight: 600; }
+
+  .card-opts {
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+
+  .card-chip {
+    font-size: 10px; font-weight: 500;
+    color: var(--text-secondary);
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .card-char {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    background: #F3F4F6;
+    padding: 3px 6px;
+    border-radius: 3px;
+    display: flex; gap: 4px; flex-wrap: wrap;
+    word-break: break-all;
+  }
+
+  /* EDGE LABELS on horizontal arrows */
+  .edge-label-h {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+  }
+
+  .logic-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 1px 5px; border-radius: 3px;
+  }
+  .logic-badge.and { background: var(--badge-and-bg); color: var(--badge-and-text); }
+  .logic-badge.or  { background: var(--badge-or-bg);  color: var(--badge-or-text); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+  .empty-state svg { width: 48px; height: 48px; margin-bottom: 16px; color: var(--border); }
+  .empty-state h3 { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; max-width: 340px; }
+
+  .always-shown {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #ECFDF5; color: #065F46;
+    font-size: 11px; font-weight: 600;
+    padding: 5px 12px; border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .always-shown svg { width: 14px; height: 14px; }
+
+  /* No-connection placeholder */
+  .no-conn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 210px;
+    padding: 20px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  /* Animations */
+  @keyframes slideRight { from { opacity:0; transform:translateX(-20px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes slideLeft { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes fadeIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+  .anim-left { animation: slideRight 400ms cubic-bezier(.4,0,.2,1) both; }
+  .anim-center { animation: fadeIn 400ms cubic-bezier(.4,0,.2,1) both; animation-delay: 150ms; }
+  .anim-right { animation: slideLeft 400ms cubic-bezier(.4,0,.2,1) both; animation-delay: 250ms; }
+  .anim-conn { animation: fadeIn 300ms ease both; animation-delay: 200ms; }
+</style>
+</head>
+<body>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <div class="toolbar-logo"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+    <div>
+      <div class="toolbar-title">Logic Flowchart</div>
+      <div class="toolbar-sub">Question relationships</div>
+    </div>
+  </div>
+  <div class="toolbar-center">
+    <select class="q-select" id="q-select" onchange="renderQuestion(+this.value)">
+      <option value="">Select a question...</option>
+    </select>
+  </div>
+  <div class="toolbar-right">
+    <button class="zoom-btn" onclick="adjustZoom(-10)">-</button>
+    <span class="zoom-level" id="zoom-level">100%</span>
+    <button class="zoom-btn" onclick="adjustZoom(10)">+</button>
+  </div>
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb-bar" id="breadcrumb"></div>
+
+<!-- CANVAS -->
+<div class="canvas">
+  <div class="canvas-inner" id="canvas" style="transform-origin: center center;"></div>
+</div>
+
+<script>
+const questions = [
+  { id:1, qid:"Q1", text:"What is your name?", category:"identity", catLabel:"Who I Am", type:"text-field", options:null, chars:null, enableWhen:null, sug:0 },
+  { id:2, qid:"Q2", text:"Is this the name you'd like doctors to use?", category:"identity", catLabel:"Who I Am", type:"radio", options:["Yes","No"], chars:["patient_has_preferred_name","patient_has_no_preferred_name"], enableWhen:null, sug:2 },
+  { id:3, qid:"Q3", text:"What name would you prefer?", category:"identity", catLabel:"Who I Am", type:"text-field", options:null, chars:["patients_preferred_name"], enableWhen:{ conditions:[{ char:"patient_has_no_preferred_name", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:4, qid:"Q4", text:"Do you have any allergies?", category:"allergies", catLabel:"Allergies", type:"radio", options:["Yes","No"], chars:["patient_has_allergies","patient_has_no_allergies"], enableWhen:null, sug:1 },
+  { id:5, qid:"Q5", text:"Please list your allergies", category:"allergies", catLabel:"Allergies", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[{ char:"patient_has_allergies", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:6, qid:"Q6", text:"What is your date of birth?", category:"identity", catLabel:"Who I Am", type:"date", options:null, chars:["patient_age"], enableWhen:null, sug:0 },
+  { id:7, qid:"Q7", text:"Are you currently taking medication?", category:"medications", catLabel:"My Medications", type:"radio", options:["Yes","No"], chars:["patient_takes_meds","patient_no_meds"], enableWhen:null, sug:3 },
+  { id:8, qid:"Q8", text:"List your current medications", category:"medications", catLabel:"My Medications", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[{ char:"patient_takes_meds", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:9, qid:"Q9", text:"Have you had adverse reactions to any medication?", category:"medications", catLabel:"My Medications", type:"radio", options:["Yes","No"], chars:["patient_has_reactions","patient_no_reactions"], enableWhen:{ conditions:[{ char:"patient_takes_meds", op:"=", val:"true" }], logic:"AND" }, sug:1 },
+  { id:10, qid:"Q10", text:"Describe the reactions experienced", category:"medications", catLabel:"My Medications", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[ { char:"patient_has_reactions", op:"=", val:"true" }, { char:"patient_takes_meds", op:"=", val:"true" } ], logic:"AND" }, sug:0 }
+];
+
+const charMap = {};
+questions.forEach(q => {
+  if (q.chars && q.options) {
+    q.options.forEach((opt, i) => { if (q.chars[i]) charMap[q.chars[i]] = { q, opt }; });
+  } else if (q.chars) {
+    q.chars.forEach(ch => { charMap[ch] = { q, opt: null }; });
+  }
+});
+
+const typeIcons = {
+  'text-field': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>',
+  'radio': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>',
+  'text-area': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h10"/></svg>',
+  'date': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>'
+};
+
+const sel = document.getElementById('q-select');
+questions.forEach(q => {
+  const o = document.createElement('option');
+  o.value = q.id;
+  o.textContent = `${q.qid} \u2014 ${q.text}`;
+  sel.appendChild(o);
+});
+
+let zoomLevel = 100;
+function adjustZoom(delta) {
+  zoomLevel = Math.max(60, Math.min(150, zoomLevel + delta));
+  document.getElementById('zoom-level').textContent = zoomLevel + '%';
+  document.getElementById('canvas').style.transform = `scale(${zoomLevel / 100})`;
+}
+
+// Navigation history for breadcrumb
+let navHistory = [];
+
+function getParents(q) {
+  if (!q.enableWhen) return [];
+  const parents = [];
+  q.enableWhen.conditions.forEach(c => {
+    const src = charMap[c.char];
+    if (src && !parents.find(p => p.q.id === src.q.id)) parents.push({ q: src.q, conditions: [] });
+  });
+  q.enableWhen.conditions.forEach(c => {
+    const src = charMap[c.char];
+    if (src) { const p = parents.find(x => x.q.id === src.q.id); if (p) p.conditions.push({ ...c, optionText: src.opt }); }
+  });
+  return parents;
+}
+
+function getChildren(q) {
+  const children = [];
+  questions.forEach(cq => {
+    if (!cq.enableWhen) return;
+    const conds = cq.enableWhen.conditions.filter(c => { const src = charMap[c.char]; return src && src.q.id === q.id; });
+    if (conds.length > 0) children.push({ q: cq, conditions: conds.map(c => ({ ...c, optionText: charMap[c.char]?.opt })), logic: cq.enableWhen.logic, totalConds: cq.enableWhen.conditions.length });
+  });
+  return children;
+}
+
+function buildCard(q, role, animClass) {
+  const cls = role === 'hero' ? 'card hero' : `card ${role}`;
+  const clickAttr = role !== 'hero' ? `onclick="navigateTo(${q.id})"` : '';
+
+  let optionsHTML = '';
+  if (q.options) {
+    optionsHTML = `<div class="card-opts">${q.options.map((o, i) => {
+      const ch = q.chars?.[i];
+      return `<span class="card-chip" title="${ch || ''}">${o}</span>`;
+    }).join('')}</div>`;
+  }
+
+  let charsHTML = '';
+  if (q.chars && role === 'hero') {
+    charsHTML = `<div class="card-char">${q.chars.map(c => `<span>${c}</span>`).join('')}</div>`;
+  }
+
+  return `
+    <div class="${cls} ${animClass}" ${clickAttr}>
+      <div class="card-cat-bg ${q.category}">${q.catLabel}</div>
+      <div class="card-body">
+        <div class="card-head">
+          <span class="card-num">${q.qid}</span>
+          <span class="card-type">${typeIcons[q.type] || ''}</span>
+          ${q.sug > 0 ? `<span class="card-sug">${q.sug} sug</span>` : ''}
+        </div>
+        <div class="card-text">${q.text}</div>
+        ${optionsHTML}
+        ${charsHTML}
+      </div>
+    </div>
+  `;
+}
+
+function navigateTo(id) {
+  const q = questions.find(x => x.id === id);
+  if (!q) return;
+
+  // Update history
+  const idx = navHistory.findIndex(h => h.id === id);
+  if (idx === -1) {
+    navHistory.push(q);
+  } else {
+    navHistory = navHistory.slice(0, idx + 1);
+  }
+  if (navHistory.length > 6) navHistory = navHistory.slice(-6);
+
+  document.getElementById('q-select').value = id;
+  renderQuestion(id);
+}
+
+function updateBreadcrumb(q) {
+  const bc = document.getElementById('breadcrumb');
+  if (!q) { bc.innerHTML = '<span class="breadcrumb-label">Path:</span> <span style="color:var(--text-dim)">Select a question</span>'; return; }
+
+  let html = '<span class="breadcrumb-label">Path:</span> ';
+  navHistory.forEach((h, i) => {
+    if (i > 0) html += ' <span class="breadcrumb-sep">&rsaquo;</span> ';
+    const isActive = h.id === q.id;
+    html += `<span class="breadcrumb-item ${isActive ? 'active' : ''}" onclick="navigateTo(${h.id})">${h.qid}</span>`;
+  });
+  bc.innerHTML = html;
+}
+
+function renderQuestion(id) {
+  const canvas = document.getElementById('canvas');
+  const q = questions.find(x => x.id === id);
+  updateBreadcrumb(q);
+
+  if (!q) {
+    canvas.innerHTML = `
+      <div class="empty-state">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h3>Select a question</h3>
+        <p>Choose a question from the dropdown to see its logic flow from left to right.</p>
+      </div>`;
+    return;
+  }
+
+  const parents = getParents(q);
+  const children = getChildren(q);
+  const hasParents = parents.length > 0;
+  const hasChildren = children.length > 0;
+
+  let html = '<div class="flow-container">';
+
+  // LEFT COLUMN: Parents
+  html += `<div class="flow-column anim-left">`;
+  if (hasParents) {
+    html += `<div class="flow-column-label">Depends on</div>`;
+    parents.forEach(p => { html += buildCard(p.q, 'parent', ''); });
+  } else {
+    html += `<div class="no-conn">
+      <div>
+        <div class="always-shown" style="margin-bottom:0"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> No parents</div>
+      </div>
+    </div>`;
+  }
+  html += `</div>`;
+
+  // LEFT CONNECTOR
+  html += `<div class="flow-connectors anim-conn" id="left-conn"></div>`;
+
+  // CENTER: Hero
+  html += `<div class="flow-column anim-center">`;
+  html += `<div class="flow-column-label" style="color:var(--brand)">Selected</div>`;
+  html += buildCard(q, 'hero', '');
+  html += `</div>`;
+
+  // RIGHT CONNECTOR
+  html += `<div class="flow-connectors anim-conn" id="right-conn"></div>`;
+
+  // RIGHT COLUMN: Children
+  html += `<div class="flow-column anim-right">`;
+  if (hasChildren) {
+    html += `<div class="flow-column-label">Controls</div>`;
+    children.forEach(ch => { html += buildCard(ch.q, 'child', ''); });
+  } else {
+    html += `<div class="no-conn">No children</div>`;
+  }
+  html += `</div>`;
+
+  html += '</div>';
+  canvas.innerHTML = html;
+
+  // Draw horizontal SVG connectors after DOM is rendered
+  requestAnimationFrame(() => drawConnectors(q, parents, children));
+}
+
+function drawConnectors(q, parents, children) {
+  const leftConn = document.getElementById('left-conn');
+  const rightConn = document.getElementById('right-conn');
+  if (!leftConn || !rightConn) return;
+
+  // LEFT: parent cards to hero
+  if (parents.length > 0) {
+    const parentCards = leftConn.previousElementSibling.querySelectorAll('.card');
+    const heroCard = leftConn.nextElementSibling.querySelector('.card');
+    if (parentCards.length > 0 && heroCard) {
+      drawHorizontalConnectors(leftConn, parentCards, heroCard, parents, q.enableWhen?.logic, q.enableWhen?.conditions.length, 'right');
+    }
+  } else {
+    leftConn.innerHTML = '';
+  }
+
+  // RIGHT: hero to child cards
+  if (children.length > 0) {
+    const heroCard = rightConn.previousElementSibling.querySelector('.card');
+    const childCards = rightConn.nextElementSibling.querySelectorAll('.card');
+    if (heroCard && childCards.length > 0) {
+      drawHorizontalConnectors(rightConn, [heroCard], childCards, children, null, null, 'left');
+    }
+  } else {
+    rightConn.innerHTML = '';
+  }
+}
+
+function drawHorizontalConnectors(container, fromCards, toCards, edgeData, logic, totalConds, direction) {
+  const containerRect = container.getBoundingClientRect();
+  const w = containerRect.width;
+  const h = Math.max(containerRect.height, 100);
+
+  // Resize container to fit
+  container.style.height = h + 'px';
+
+  let svgHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:${w}px;height:${h}px">`;
+
+  const fromRects = Array.from(fromCards).map(c => c.getBoundingClientRect());
+  const toRects = Array.from(toCards).map(c => c.getBoundingClientRect());
+
+  let labels = [];
+
+  if (direction === 'right') {
+    // Parents -> Hero (many to one)
+    fromRects.forEach((fr, i) => {
+      const fromY = fr.top + fr.height / 2 - containerRect.top;
+      const toY = toRects[0].top + toRects[0].height / 2 - containerRect.top;
+      const cp = w * 0.45;
+      svgHTML += `<path d="M 0 ${fromY} C ${cp} ${fromY}, ${w - cp} ${toY}, ${w} ${toY}" fill="none" stroke="#B0BEC5" stroke-width="1.5"/>`;
+      // Arrowhead
+      svgHTML += `<polygon points="${w},${toY} ${w-7},${toY-4} ${w-7},${toY+4}" fill="#B0BEC5"/>`;
+
+      // Label position
+      const lx = w / 2;
+      const ly = (fromY + toY) / 2;
+      if (edgeData[i]) {
+        edgeData[i].conditions.forEach((c, ci) => {
+          const text = c.optionText ? `= "${c.optionText}"` : `${c.op} ${c.val || ''}`;
+          let badge = '';
+          if (totalConds > 1 && ci === 0) badge = `<span class="logic-badge ${logic.toLowerCase()}">${logic}</span>`;
+          labels.push({ x: lx, y: ly + ci * 28, html: `${badge} ${text}` });
+        });
+      }
+    });
+  } else {
+    // Hero -> Children (one to many)
+    toRects.forEach((tr, i) => {
+      const fromY = fromRects[0].top + fromRects[0].height / 2 - containerRect.top;
+      const toY = tr.top + tr.height / 2 - containerRect.top;
+      const cp = w * 0.45;
+      svgHTML += `<path d="M 0 ${fromY} C ${cp} ${fromY}, ${w - cp} ${toY}, ${w} ${toY}" fill="none" stroke="#B0BEC5" stroke-width="1.5"/>`;
+      svgHTML += `<polygon points="${w},${toY} ${w-7},${toY-4} ${w-7},${toY+4}" fill="#B0BEC5"/>`;
+
+      const lx = w / 2;
+      const ly = (fromY + toY) / 2;
+      if (edgeData[i]) {
+        edgeData[i].conditions.forEach((c, ci) => {
+          const text = c.optionText ? `= "${c.optionText}"` : `${c.op} ${c.val || ''}`;
+          let badge = '';
+          if (edgeData[i].totalConds > 1 && ci === 0) badge = `<span class="logic-badge ${edgeData[i].logic.toLowerCase()}">${edgeData[i].logic}</span>`;
+          labels.push({ x: lx, y: ly + ci * 28, html: `${badge} ${text}` });
+        });
+      }
+    });
+  }
+
+  svgHTML += '</svg>';
+
+  // Add labels
+  let labelsHTML = '';
+  labels.forEach(l => {
+    labelsHTML += `<div class="edge-label-h" style="left:${l.x}px;top:${l.y}px">${l.html}</div>`;
+  });
+
+  container.innerHTML = svgHTML + labelsHTML;
+}
+
+// Init
+navHistory.push(questions.find(x => x.id === 10));
+sel.value = 10;
+renderQuestion(10);
+</script>
+</body>
+</html>

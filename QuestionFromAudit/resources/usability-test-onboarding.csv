@@ -1,0 +1,79 @@
+Id,Section,Page,ItemType,Question,Option,Characteristic,Required,EnableWhen,HasHelper,HelperType,HelperName,HelperValue
+Q001,About You,Welcome,content-block,Welcome to the New Starter Onboarding Survey. Please complete each section to help us prepare for your first day.,,,,FALSE,,,
+Q002,About You,Welcome,spacer,,,,,FALSE,,,
+Q003,About You,Personal Details,text-field,What is your full name?,,employee_full_name,TRUE,,FALSE,,,
+Q004,About You,Personal Details,radio,Do you have a preferred name or nickname?,No,employee_has_no_preferred_name,FALSE,,FALSE,,,
+Q004,About You,Personal Details,radio,Do you have a preferred name or nickname?,Yes,employee_has_preferred_name,FALSE,,FALSE,,,
+Q005,About You,Personal Details,text-field,What name would you like us to use?,,employee_preferred_name,FALSE,(employee_has_preferred_name=true),FALSE,,,
+Q006,About You,Personal Details,radio,Which department are you joining?,Engineering,employee_dept_engineering,TRUE,,TRUE,contentBlock,Departments,"<p>If you are unsure which department you belong to, please check your offer letter or ask your hiring manager.</p>"
+Q006,About You,Personal Details,radio,Which department are you joining?,Design,employee_dept_design,TRUE,,TRUE,contentBlock,Departments,"<p>If you are unsure which department you belong to, please check your offer letter or ask your hiring manager.</p>"
+Q006,About You,Personal Details,radio,Which department are you joining?,Marketing,employee_dept_marketing,TRUE,,TRUE,contentBlock,Departments,"<p>If you are unsure which department you belong to, please check your offer letter or ask your hiring manager.</p>"
+Q006,About You,Personal Details,radio,Which department are you joining?,Sales,employee_dept_sales,TRUE,,TRUE,contentBlock,Departments,"<p>If you are unsure which department you belong to, please check your offer letter or ask your hiring manager.</p>"
+Q006,About You,Personal Details,radio,Which department are you joining?,Operations,employee_dept_operations,TRUE,,TRUE,contentBlock,Departments,"<p>If you are unsure which department you belong to, please check your offer letter or ask your hiring manager.</p>"
+Q006,About You,Personal Details,radio,Which department are you joining?,Other,employee_dept_other,TRUE,,TRUE,contentBlock,Departments,"<p>If you are unsure which department you belong to, please check your offer letter or ask your hiring manager.</p>"
+Q007,About You,Personal Details,text-field,Please specify your department,,employee_dept_other_detail,TRUE,(employee_dept_other=true),FALSE,,,
+Q008,About You,Personal Details,date,What is your start date?,,employee_start_date,TRUE,,FALSE,,,
+Q009,About You,Personal Details,radio,Is this a full-time or part-time role?,Full-time,employee_role_fulltime,TRUE,,FALSE,,,
+Q009,About You,Personal Details,radio,Is this a full-time or part-time role?,Part-time,employee_role_parttime,TRUE,,FALSE,,,
+Q010,About You,Personal Details,number-input,How many hours per week will you be working?,,employee_weekly_hours,TRUE,(employee_role_parttime=true),FALSE,,,
+Q011,About You,Contact,text-field,What is your personal email address?,,employee_personal_email,TRUE,,FALSE,,,
+Q012,About You,Contact,radio,What is your preferred method of contact before your start date?,Email,employee_contact_pref_email,FALSE,,FALSE,,,
+Q012,About You,Contact,radio,What is your preferred method of contact before your start date?,Phone call,employee_contact_pref_phone,FALSE,,FALSE,,,
+Q012,About You,Contact,radio,What is your preferred method of contact before your start date?,Text message,employee_contact_pref_text,FALSE,,FALSE,,,
+Q013,About You,Emergency Contact,text-paragraph,Please provide details for an emergency contact.,,,,FALSE,,,
+Q014,About You,Emergency Contact,text-field,Emergency contact full name,,employee_emergency_name,TRUE,,FALSE,,,
+Q015,About You,Emergency Contact,text-field,Relationship to you,,employee_emergency_relationship,FALSE,,FALSE,,,
+Q016,About You,Emergency Contact,number-input,Emergency contact phone number,,employee_emergency_phone,TRUE,,FALSE,,,
+Q017,Work Setup,Workspace,radio,Where will you primarily be working?,Office,employee_location_office,TRUE,,FALSE,,,
+Q017,Work Setup,Workspace,radio,Where will you primarily be working?,Remote,employee_location_remote,TRUE,,FALSE,,,
+Q017,Work Setup,Workspace,radio,Where will you primarily be working?,Hybrid,employee_location_hybrid,TRUE,,FALSE,,,
+Q018,Work Setup,Workspace,radio,Do you have a home office setup already?,No,employee_has_no_home_office,FALSE,(employee_location_remote=true) OR(employee_location_hybrid=true),FALSE,,,
+Q018,Work Setup,Workspace,radio,Do you have a home office setup already?,Yes,employee_has_home_office,FALSE,(employee_location_remote=true) OR(employee_location_hybrid=true),FALSE,,,
+Q019,Work Setup,Workspace,checkbox,Which items do you need for your home office?,Monitor,employee_needs_monitor,FALSE,(employee_has_no_home_office=true),TRUE,contentBlock,Equipment Policy,"<p>All remote and hybrid employees are eligible for a home office equipment allowance. Items will be shipped before your start date where possible.</p>"
+Q019,Work Setup,Workspace,checkbox,Which items do you need for your home office?,Keyboard,employee_needs_keyboard,FALSE,(employee_has_no_home_office=true),TRUE,contentBlock,Equipment Policy,"<p>All remote and hybrid employees are eligible for a home office equipment allowance. Items will be shipped before your start date where possible.</p>"
+Q019,Work Setup,Workspace,checkbox,Which items do you need for your home office?,Mouse,employee_needs_mouse,FALSE,(employee_has_no_home_office=true),TRUE,contentBlock,Equipment Policy,"<p>All remote and hybrid employees are eligible for a home office equipment allowance. Items will be shipped before your start date where possible.</p>"
+Q019,Work Setup,Workspace,checkbox,Which items do you need for your home office?,Desk,employee_needs_desk,FALSE,(employee_has_no_home_office=true),TRUE,contentBlock,Equipment Policy,"<p>All remote and hybrid employees are eligible for a home office equipment allowance. Items will be shipped before your start date where possible.</p>"
+Q019,Work Setup,Workspace,checkbox,Which items do you need for your home office?,Chair,employee_needs_chair,FALSE,(employee_has_no_home_office=true),TRUE,contentBlock,Equipment Policy,"<p>All remote and hybrid employees are eligible for a home office equipment allowance. Items will be shipped before your start date where possible.</p>"
+Q019,Work Setup,Workspace,checkbox,Which items do you need for your home office?,Headset,employee_needs_headset,FALSE,(employee_has_no_home_office=true),TRUE,contentBlock,Equipment Policy,"<p>All remote and hybrid employees are eligible for a home office equipment allowance. Items will be shipped before your start date where possible.</p>"
+Q020,Work Setup,Workspace,radio,Do you have any specific workspace requirements or accessibility needs?,No,employee_has_no_workspace_needs,FALSE,,FALSE,,,
+Q020,Work Setup,Workspace,radio,Do you have any specific workspace requirements or accessibility needs?,Yes,employee_has_workspace_needs,FALSE,,FALSE,,,
+Q021,Work Setup,Workspace,text-area,Please describe your workspace requirements,,employee_workspace_needs_detail,FALSE,(employee_has_workspace_needs=true),FALSE,,,
+Q022,Work Setup,Equipment,radio,Which computer platform do you prefer?,Mac,employee_platform_mac,TRUE,(employee_dept_engineering=true) OR(employee_dept_design=true),FALSE,,,
+Q022,Work Setup,Equipment,radio,Which computer platform do you prefer?,Windows,employee_platform_windows,TRUE,(employee_dept_engineering=true) OR(employee_dept_design=true),FALSE,,,
+Q022,Work Setup,Equipment,radio,Which computer platform do you prefer?,Linux,employee_platform_linux,TRUE,(employee_dept_engineering=true) OR(employee_dept_design=true),FALSE,,,
+Q023,Work Setup,Equipment,radio,Do you need a second monitor in the office?,No,employee_no_second_monitor,FALSE,(employee_location_office=true) OR(employee_location_hybrid=true),FALSE,,,
+Q023,Work Setup,Equipment,radio,Do you need a second monitor in the office?,Yes,employee_second_monitor,FALSE,(employee_location_office=true) OR(employee_location_hybrid=true),FALSE,,,
+Q024,Skills & Training,Experience,radio,How many years of professional experience do you have?,Less than 1 year,employee_exp_junior,FALSE,,FALSE,,,
+Q024,Skills & Training,Experience,radio,How many years of professional experience do you have?,1-3 years,employee_exp_mid,FALSE,,FALSE,,,
+Q024,Skills & Training,Experience,radio,How many years of professional experience do you have?,4-7 years,employee_exp_senior,FALSE,,FALSE,,,
+Q024,Skills & Training,Experience,radio,How many years of professional experience do you have?,8+ years,employee_exp_lead,FALSE,,FALSE,,,
+Q025,Skills & Training,Experience,checkbox,Which tools are you familiar with?,Slack,employee_knows_slack,FALSE,,FALSE,,,
+Q025,Skills & Training,Experience,checkbox,Which tools are you familiar with?,Jira,employee_knows_jira,FALSE,,FALSE,,,
+Q025,Skills & Training,Experience,checkbox,Which tools are you familiar with?,Confluence,employee_knows_confluence,FALSE,,FALSE,,,
+Q025,Skills & Training,Experience,checkbox,Which tools are you familiar with?,Google Workspace,employee_knows_google,FALSE,,FALSE,,,
+Q025,Skills & Training,Experience,checkbox,Which tools are you familiar with?,Microsoft 365,employee_knows_microsoft,FALSE,,FALSE,,,
+Q025,Skills & Training,Experience,checkbox,Which tools are you familiar with?,Figma,employee_knows_figma,FALSE,,FALSE,,,
+Q025,Skills & Training,Experience,checkbox,Which tools are you familiar with?,None of these,employee_knows_none,FALSE,,FALSE,,,
+Q026,Skills & Training,Training,radio,Would you like to attend an optional orientation workshop in your first week?,No,employee_no_orientation,FALSE,,TRUE,contentBlock,Orientation Workshop,"<p>The orientation workshop covers company culture, key processes, and is a chance to meet other new starters. Sessions run every Monday morning.</p>"
+Q026,Skills & Training,Training,radio,Would you like to attend an optional orientation workshop in your first week?,Yes,employee_wants_orientation,FALSE,,TRUE,contentBlock,Orientation Workshop,"<p>The orientation workshop covers company culture, key processes, and is a chance to meet other new starters. Sessions run every Monday morning.</p>"
+Q027,Skills & Training,Training,checkbox,Are there any specific training topics you are interested in?,Project management,employee_training_pm,FALSE,,FALSE,,,
+Q027,Skills & Training,Training,checkbox,Are there any specific training topics you are interested in?,Presentation skills,employee_training_presenting,FALSE,,FALSE,,,
+Q027,Skills & Training,Training,checkbox,Are there any specific training topics you are interested in?,Data analysis,employee_training_data,FALSE,,FALSE,,,
+Q027,Skills & Training,Training,checkbox,Are there any specific training topics you are interested in?,Leadership,employee_training_leadership,FALSE,,FALSE,,,
+Q027,Skills & Training,Training,checkbox,Are there any specific training topics you are interested in?,Software tools,employee_training_tools,FALSE,,FALSE,,,
+Q028,Skills & Training,Training,text-area,Is there anything else you would like to learn about during onboarding?,,employee_training_other,FALSE,,FALSE,,,
+Q029,Availability & Schedule,Schedule,radio,Which working pattern do you prefer?,Standard hours (9am-5pm),employee_schedule_standard,FALSE,,FALSE,,,
+Q029,Availability & Schedule,Schedule,radio,Which working pattern do you prefer?,Early start (7am-3pm),employee_schedule_early,FALSE,,FALSE,,,
+Q029,Availability & Schedule,Schedule,radio,Which working pattern do you prefer?,Late start (10am-6pm),employee_schedule_late,FALSE,,FALSE,,,
+Q029,Availability & Schedule,Schedule,radio,Which working pattern do you prefer?,Flexible,employee_schedule_flexible,FALSE,,FALSE,,,
+Q030,Availability & Schedule,Schedule,radio,Do you have any regular commitments that affect your availability?,No,employee_no_commitments,FALSE,,FALSE,,,
+Q030,Availability & Schedule,Schedule,radio,Do you have any regular commitments that affect your availability?,Yes,employee_has_commitments,FALSE,,FALSE,,,
+Q031,Availability & Schedule,Schedule,text-area,Please describe your regular commitments,,employee_commitments_detail,FALSE,(employee_has_commitments=true),FALSE,,,
+Q032,Availability & Schedule,Travel,radio,Are you able to travel for work if required?,No,employee_no_travel,FALSE,,FALSE,,,
+Q032,Availability & Schedule,Travel,radio,Are you able to travel for work if required?,Yes occasionally,employee_travel_occasionally,FALSE,,FALSE,,,
+Q032,Availability & Schedule,Travel,radio,Are you able to travel for work if required?,Yes frequently,employee_travel_frequently,FALSE,,FALSE,,,
+Q033,Availability & Schedule,Travel,radio,Do you have a valid passport?,No,employee_no_passport,FALSE,(employee_travel_occasionally=true) OR(employee_travel_frequently=true),FALSE,,,
+Q033,Availability & Schedule,Travel,radio,Do you have a valid passport?,Yes,employee_has_passport,FALSE,(employee_travel_occasionally=true) OR(employee_travel_frequently=true),FALSE,,,
+Q034,Availability & Schedule,Additional,radio,Is there anything else you would like us to know before your first day?,No,employee_no_additional_info,FALSE,,FALSE,,,
+Q034,Availability & Schedule,Additional,radio,Is there anything else you would like us to know before your first day?,Yes,employee_has_additional_info,FALSE,,FALSE,,,
+Q035,Availability & Schedule,Additional,text-area,Please share anything else you would like us to know,,employee_additional_info_detail,FALSE,(employee_has_additional_info=true),FALSE,,,

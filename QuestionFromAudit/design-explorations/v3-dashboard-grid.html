@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust Instance — Dashboard Grid</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#4A90A4',
+        'primary-dark': '#3A7388',
+        warm: { 50: '#FAFAF9', 100: '#F5F5F4', 200: '#E7E5E4', 300: '#D6D3D1', 400: '#A8A29E', 500: '#78716C', 600: '#57534E', 700: '#44403C', 800: '#292524', 900: '#1C1917' },
+        cat: { who: '#4A90A4', health: '#7C3AED', meds: '#059669', allergy: '#DC2626' }
+      }
+    }
+  }
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .tile { transition: all 0.15s ease; }
+  .tile:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .tile:hover .quick-actions { opacity: 1; }
+  .quick-actions { opacity: 0; transition: opacity 0.15s; }
+  .drawer-enter { animation: slideIn 0.25s ease-out; }
+  @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .chip-filter { display: inline-flex; align-items: center; padding: 5px 14px; border-radius: 9999px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .chip-filter.active { background: #4A90A4; color: white; }
+  .chip-filter:not(.active) { background: #F5F5F4; color: #57534E; }
+  .chip-filter:not(.active):hover { background: #E7E5E4; }
+  .progress-segment { height: 4px; border-radius: 2px; transition: width 0.3s; }
+</style>
+</head>
+<body class="bg-warm-50 h-screen flex flex-col overflow-hidden">
+
+  <!-- Progress Bar -->
+  <div class="bg-white border-b border-warm-200 px-6 py-2 flex items-center gap-3">
+    <span class="text-xs font-medium text-warm-500">Progress</span>
+    <div class="flex-1 flex gap-0.5 rounded-full overflow-hidden bg-warm-100">
+      <div class="progress-segment bg-emerald-400" style="width: 35%"></div>
+      <div class="progress-segment bg-amber-400" style="width: 15%"></div>
+      <div class="progress-segment bg-warm-200" style="width: 50%"></div>
+    </div>
+    <span class="text-xs text-warm-500"><span class="font-semibold text-warm-700">12</span> of 24 reviewed</span>
+  </div>
+
+  <!-- Header / Toolbar -->
+  <header class="bg-white border-b border-warm-200 px-6 py-3">
+    <div class="flex items-center gap-4">
+      <h1 class="text-lg font-semibold text-warm-800 flex-shrink-0">St. Mary's NHS Trust</h1>
+      <div class="flex-1 flex items-center gap-3">
+        <!-- Search -->
+        <div class="relative max-w-sm flex-1">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" placeholder="Search questions..." class="w-full pl-9 pr-4 py-2 text-sm bg-warm-50 border border-warm-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        </div>
+        <!-- Filter Chips -->
+        <div class="flex items-center gap-2 overflow-x-auto flex-shrink-0">
+          <span class="chip-filter active">All</span>
+          <span class="chip-filter"><span class="w-2 h-2 rounded-full bg-cat-who mr-1.5"></span>Who I Am</span>
+          <span class="chip-filter"><span class="w-2 h-2 rounded-full bg-cat-health mr-1.5"></span>My Health</span>
+          <span class="chip-filter"><span class="w-2 h-2 rounded-full bg-cat-meds mr-1.5"></span>Medications</span>
+          <span class="chip-filter"><span class="w-2 h-2 rounded-full bg-cat-allergy mr-1.5"></span>Allergies</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button class="px-3 py-1.5 text-sm font-medium text-warm-500 hover:text-warm-700 hover:bg-warm-100 rounded-lg transition">Audit View</button>
+        <button class="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-lg">Patient View</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- Grid Area -->
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="grid grid-cols-3 gap-4">
+
+        <!-- Tile 1 -->
+        <div class="tile bg-white rounded-xl border border-warm-200 p-4 cursor-pointer relative group">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-who"></span>
+              <span class="text-xs text-warm-400 font-medium">Who I Am</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+              <span class="text-[11px] text-warm-400">Single</span>
+            </div>
+          </div>
+          <p class="text-sm text-warm-800 leading-snug line-clamp-2 mb-3">Is this the name that you would like the doctors and nurses to use to address you?</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-medium">Reviewed</span>
+            <div class="quick-actions flex items-center gap-1">
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile 2 -->
+        <div class="tile bg-white rounded-xl border border-warm-200 p-4 cursor-pointer relative group">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-who"></span>
+              <span class="text-xs text-warm-400 font-medium">Who I Am</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h7"/></svg>
+              <span class="text-[11px] text-warm-400">Text</span>
+            </div>
+          </div>
+          <p class="text-sm text-warm-800 leading-snug line-clamp-2 mb-3">What name would you prefer to be called?</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-warm-100 text-warm-500 font-medium">Not reviewed</span>
+            <div class="quick-actions flex items-center gap-1">
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile 3 — Selected (has border highlight) -->
+        <div class="tile bg-white rounded-xl border-2 border-primary p-4 cursor-pointer relative group ring-4 ring-primary/10">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-health"></span>
+              <span class="text-xs text-warm-400 font-medium">My Health</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+              <span class="text-[11px] text-warm-400">Single</span>
+            </div>
+          </div>
+          <p class="text-sm text-warm-800 leading-snug line-clamp-2 mb-3">Have you had an anaesthetic before?</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">2 suggestions</span>
+            <div class="flex items-center gap-1">
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile 4 -->
+        <div class="tile bg-white rounded-xl border border-warm-200 p-4 cursor-pointer relative group">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-health"></span>
+              <span class="text-xs text-warm-400 font-medium">My Health</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <span class="text-[11px] text-warm-400">Multi</span>
+            </div>
+          </div>
+          <p class="text-sm text-warm-800 leading-snug line-clamp-2 mb-3">Sample Checklist</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-medium">Reviewed</span>
+            <div class="quick-actions flex items-center gap-1">
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile 5 -->
+        <div class="tile bg-white rounded-xl border border-warm-200 p-4 cursor-pointer relative group">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-health"></span>
+              <span class="text-xs text-warm-400 font-medium">My Health</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+              <span class="text-[11px] text-warm-400">Single</span>
+            </div>
+          </div>
+          <p class="text-sm text-warm-800 leading-snug line-clamp-2 mb-3">Do you have any existing medical conditions?</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-warm-100 text-warm-500 font-medium">Not reviewed</span>
+            <div class="quick-actions flex items-center gap-1">
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile 6 -->
+        <div class="tile bg-white rounded-xl border border-warm-200 p-4 cursor-pointer relative group">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-meds"></span>
+              <span class="text-xs text-warm-400 font-medium">My Medications</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+              <span class="text-[11px] text-warm-400">Single</span>
+            </div>
+          </div>
+          <p class="text-sm text-warm-800 leading-snug line-clamp-2 mb-3">Are you currently taking any medications?</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-warm-100 text-warm-500 font-medium">Not reviewed</span>
+            <div class="quick-actions flex items-center gap-1">
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile 7 -->
+        <div class="tile bg-white rounded-xl border border-warm-200 p-4 cursor-pointer relative group">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-allergy"></span>
+              <span class="text-xs text-warm-400 font-medium">Allergies</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+              <span class="text-[11px] text-warm-400">Single</span>
+            </div>
+          </div>
+          <p class="text-sm text-warm-800 leading-snug line-clamp-2 mb-3">Do you have any allergies?</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">1 suggestion</span>
+            <div class="quick-actions flex items-center gap-1">
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile 8 -->
+        <div class="tile bg-white rounded-xl border border-warm-200 p-4 cursor-pointer relative group">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-allergy"></span>
+              <span class="text-xs text-warm-400 font-medium">Allergies</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h7"/></svg>
+              <span class="text-[11px] text-warm-400">Text</span>
+            </div>
+          </div>
+          <p class="text-sm text-warm-800 leading-snug line-clamp-2 mb-3">Please describe your allergies and any reactions you have experienced</p>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-warm-100 text-warm-500 font-medium">Not reviewed</span>
+              <span class="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-500 font-medium">Cond.</span>
+            </div>
+            <div class="quick-actions flex items-center gap-1">
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
+              <button class="p-1 hover:bg-warm-100 rounded"><svg class="w-3.5 h-3.5 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Detail Drawer (slide-in from right, pinned open) -->
+    <div class="w-[480px] bg-white border-l border-warm-200 flex flex-col drawer-enter">
+      <!-- Drawer Header -->
+      <div class="px-5 py-4 border-b border-warm-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-cat-health"></span>
+          <span class="text-xs font-medium text-warm-500">My Health</span>
+          <span class="text-xs text-warm-400 font-mono">Q-003</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button class="p-1.5 hover:bg-warm-100 rounded-lg transition" title="Pin drawer">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+          </button>
+          <button class="p-1.5 hover:bg-warm-100 rounded-lg transition" title="Close drawer">
+            <svg class="w-4 h-4 text-warm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Drawer Tabs -->
+      <div class="border-b border-warm-100 flex">
+        <button class="px-4 py-2.5 text-sm font-medium text-primary border-b-2 border-primary">Settings</button>
+        <button class="px-4 py-2.5 text-sm font-medium text-warm-400 hover:text-warm-600 border-b-2 border-transparent">Content</button>
+        <button class="px-4 py-2.5 text-sm font-medium text-warm-400 hover:text-warm-600 border-b-2 border-transparent">Help</button>
+        <button class="px-4 py-2.5 text-sm font-medium text-warm-400 hover:text-warm-600 border-b-2 border-transparent">Logic</button>
+        <button class="px-4 py-2.5 text-sm font-medium text-warm-400 hover:text-warm-600 border-b-2 border-transparent relative">
+          Review
+          <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400"></span>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-5">
+        <!-- Question -->
+        <div>
+          <p class="text-base font-semibold text-warm-800 leading-relaxed">Have you had an anaesthetic before?</p>
+          <p class="text-xs text-warm-400 mt-1">Required · Single Choice · 3 options</p>
+        </div>
+
+        <div class="border-t border-warm-100"></div>
+
+        <!-- Answer Type -->
+        <div>
+          <label class="text-xs font-medium text-warm-500 uppercase tracking-wide block mb-2">Answer Type</label>
+          <div class="bg-warm-50 rounded-xl p-3 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-white border border-warm-200 flex items-center justify-center">
+              <svg class="w-4 h-4 text-warm-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-warm-700">Single Choice</p>
+              <p class="text-xs text-warm-400">Patient picks one option</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div>
+          <label class="text-xs font-medium text-warm-500 uppercase tracking-wide block mb-2">Options</label>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2.5 px-3 py-2 bg-warm-50 rounded-lg">
+              <span class="w-3.5 h-3.5 rounded-full border-2 border-warm-300"></span>
+              <span class="text-sm text-warm-700">Yes</span>
+            </div>
+            <div class="flex items-center gap-2.5 px-3 py-2 bg-warm-50 rounded-lg">
+              <span class="w-3.5 h-3.5 rounded-full border-2 border-warm-300"></span>
+              <span class="text-sm text-warm-700">No</span>
+            </div>
+            <div class="flex items-center gap-2.5 px-3 py-2 bg-warm-50 rounded-lg">
+              <span class="w-3.5 h-3.5 rounded-full border-2 border-warm-300"></span>
+              <span class="text-sm text-warm-700">Don't know</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Suggestion -->
+        <div>
+          <label class="text-xs font-medium text-warm-500 uppercase tracking-wide block mb-2">Suggest a Change</label>
+          <textarea class="w-full bg-warm-50 border border-warm-200 rounded-xl p-3 text-sm text-warm-700 placeholder:text-warm-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" rows="3" placeholder="Describe your suggested change..."></textarea>
+        </div>
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="px-5 py-3 border-t border-warm-100 flex items-center justify-between">
+        <button class="text-sm text-warm-400 hover:text-warm-600 transition">Cancel</button>
+        <button class="px-5 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-xl transition shadow-sm">Submit Suggestion</button>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

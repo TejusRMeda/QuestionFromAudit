@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logic View — Organic Tree</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FEFCF9;
+    --card-bg: #FFFFFF;
+    --card-border: #F0EBE3;
+    --card-shadow: 0 1px 8px rgba(180, 160, 130, 0.08), 0 4px 24px rgba(180, 160, 130, 0.06);
+    --card-shadow-hover: 0 4px 20px rgba(180, 160, 130, 0.14), 0 8px 40px rgba(180, 160, 130, 0.08);
+    --hero-color: #F59E0B;
+    --hero-glow: rgba(245, 158, 11, 0.1);
+    --hero-border: rgba(245, 158, 11, 0.35);
+    --text-primary: #3D3429;
+    --text-secondary: #7C7167;
+    --text-dim: #B8AFA5;
+    --line-color: #D4CCC2;
+    --cat-identity: #4A90A4;
+    --cat-allergies: #DC2626;
+    --cat-medications: #059669;
+    --badge-and-bg: #FEF3C7;
+    --badge-and-text: #92400E;
+    --badge-or-bg: #DBEAFE;
+    --badge-or-text: #1E40AF;
+    --pill-bg: #FAF7F2;
+    --radius: 16px;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HEADER */
+  .header {
+    height: 60px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo {
+    width: 32px; height: 32px;
+    background: var(--hero-color);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-logo svg { width: 18px; height: 18px; color: white; }
+  .header-title { font-family: 'Lora', serif; font-size: 18px; font-weight: 600; color: var(--text-primary); }
+  .header-sub { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+
+  .q-select {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 14px;
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    background: white;
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 300px;
+    outline: none;
+    transition: all 200ms;
+  }
+  .q-select:focus { border-color: var(--hero-color); box-shadow: 0 0 0 3px var(--hero-glow); }
+
+  /* CANVAS */
+  .canvas {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    background: var(--bg);
+  }
+
+  .canvas-inner {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 80px;
+    position: relative;
+  }
+
+  /* SVG layer for curved connections */
+  .conn-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 0;
+  }
+
+  /* ROWS */
+  .row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 48px;
+    position: relative;
+    z-index: 2;
+    flex-wrap: wrap;
+  }
+
+  .row-label {
+    width: 100%;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+
+  .connector-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+    min-height: 70px;
+    justify-content: center;
+    padding: 6px 0;
+  }
+
+  /* CARDS */
+  .card {
+    width: 300px;
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: var(--radius);
+    overflow: visible;
+    position: relative;
+    box-shadow: var(--card-shadow);
+    transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: default;
+  }
+  .card:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+  }
+  .card.hero {
+    width: 360px;
+    border-color: var(--hero-border);
+    box-shadow: 0 0 0 4px var(--hero-glow), var(--card-shadow);
+  }
+  .card.hero:hover {
+    box-shadow: 0 0 0 4px var(--hero-glow), var(--card-shadow-hover);
+    transform: none;
+  }
+  .card.parent, .card.child { cursor: pointer; }
+  .card.parent:hover, .card.child:hover {
+    border-color: var(--hero-border);
+  }
+
+  .card-body {
+    padding: 20px 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Category dot instead of accent bar */
+  .cat-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .cat-dot.identity { background: var(--cat-identity); }
+  .cat-dot.allergies { background: var(--cat-allergies); }
+  .cat-dot.medications { background: var(--cat-medications); }
+
+  .card-num {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+  }
+
+  .card-type {
+    width: 16px; height: 16px;
+    color: var(--text-dim);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-type svg { width: 14px; height: 14px; }
+
+  .card-sug {
+    font-size: 10px; font-weight: 600;
+    color: var(--hero-color); background: rgba(245, 158, 11, 0.1);
+    padding: 3px 8px; border-radius: 8px;
+    margin-left: auto;
+  }
+
+  .card-text {
+    font-family: 'Lora', serif;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--text-primary);
+  }
+  .card.hero .card-text { font-size: 17px; font-weight: 600; }
+
+  .card-cat {
+    font-size: 11px; font-weight: 500;
+    color: var(--text-secondary);
+    display: inline-block; width: fit-content;
+    font-style: italic;
+    font-family: 'Lora', serif;
+  }
+
+  .card-opts {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+
+  .card-chip {
+    font-size: 12px; font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--pill-bg);
+    border: 1px solid var(--card-border);
+    padding: 3px 12px;
+    border-radius: 20px;
+  }
+
+  .card-char {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--pill-bg);
+    padding: 5px 10px;
+    border-radius: 8px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+
+  /* Port dots - softer */
+  .port {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--line-color);
+    border: 2.5px solid var(--card-bg);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .port-bottom { bottom: -6px; }
+  .port-top { top: -6px; }
+  .card.hero .port { background: var(--hero-color); }
+
+  /* EDGE LABELS - pills on the line */
+  .edge-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .edge-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: white;
+    border: 1.5px solid var(--card-border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    white-space: nowrap;
+  }
+
+  .logic-badge {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 2px 7px; border-radius: 6px;
+  }
+  .logic-badge.and { background: var(--badge-and-bg); color: var(--badge-and-text); }
+  .logic-badge.or  { background: var(--badge-or-bg);  color: var(--badge-or-text); }
+
+  /* Organic hand-drawn style connector */
+  .v-line-organic {
+    width: 2px;
+    height: 20px;
+    background: var(--line-color);
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  .arrow-down {
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--line-color);
+    flex-shrink: 0;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+  .empty-state svg { width: 56px; height: 56px; margin-bottom: 20px; color: var(--card-border); }
+  .empty-state h3 { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+  .empty-state p { font-size: 14px; max-width: 340px; line-height: 1.6; color: var(--text-secondary); }
+
+  .always-shown {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #FEF7E6; color: #92400E;
+    border: 1px solid #FDE68A;
+    font-size: 12px; font-weight: 600;
+    padding: 6px 14px; border-radius: 20px;
+  }
+  .always-shown svg { width: 14px; height: 14px; }
+
+  /* Animations - spring/overshoot */
+  @keyframes springUp {
+    0% { opacity: 0; transform: translateY(20px) scale(0.97); }
+    70% { transform: translateY(-3px) scale(1.01); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .anim { animation: springUp 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .anim-d1 { animation-delay: 50ms; }
+  .anim-d2 { animation-delay: 150ms; }
+  .anim-d3 { animation-delay: 280ms; }
+  .anim-d4 { animation-delay: 400ms; }
+  .anim-d5 { animation-delay: 520ms; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+    <div>
+      <div class="header-title">Logic View</div>
+      <div class="header-sub">Conditional relationships</div>
+    </div>
+  </div>
+  <select class="q-select" id="q-select" onchange="renderQuestion(+this.value)">
+    <option value="">Select a question...</option>
+  </select>
+</div>
+
+<div class="canvas">
+  <div class="canvas-inner" id="canvas"></div>
+</div>
+
+<script>
+const questions = [
+  { id:1, qid:"Q1", text:"What is your name?", category:"identity", catLabel:"Who I Am", type:"text-field", options:null, chars:null, enableWhen:null, sug:0 },
+  { id:2, qid:"Q2", text:"Is this the name you\u2019d like doctors to use?", category:"identity", catLabel:"Who I Am", type:"radio", options:["Yes","No"], chars:["patient_has_preferred_name","patient_has_no_preferred_name"], enableWhen:null, sug:2 },
+  { id:3, qid:"Q3", text:"What name would you prefer?", category:"identity", catLabel:"Who I Am", type:"text-field", options:null, chars:["patients_preferred_name"], enableWhen:{ conditions:[{ char:"patient_has_no_preferred_name", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:4, qid:"Q4", text:"Do you have any allergies?", category:"allergies", catLabel:"Allergies", type:"radio", options:["Yes","No"], chars:["patient_has_allergies","patient_has_no_allergies"], enableWhen:null, sug:1 },
+  { id:5, qid:"Q5", text:"Please list your allergies", category:"allergies", catLabel:"Allergies", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[{ char:"patient_has_allergies", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:6, qid:"Q6", text:"What is your date of birth?", category:"identity", catLabel:"Who I Am", type:"date", options:null, chars:["patient_age"], enableWhen:null, sug:0 },
+  { id:7, qid:"Q7", text:"Are you currently taking medication?", category:"medications", catLabel:"My Medications", type:"radio", options:["Yes","No"], chars:["patient_takes_meds","patient_no_meds"], enableWhen:null, sug:3 },
+  { id:8, qid:"Q8", text:"List your current medications", category:"medications", catLabel:"My Medications", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[{ char:"patient_takes_meds", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:9, qid:"Q9", text:"Have you had adverse reactions to any medication?", category:"medications", catLabel:"My Medications", type:"radio", options:["Yes","No"], chars:["patient_has_reactions","patient_no_reactions"], enableWhen:{ conditions:[{ char:"patient_takes_meds", op:"=", val:"true" }], logic:"AND" }, sug:1 },
+  { id:10, qid:"Q10", text:"Describe the reactions experienced", category:"medications", catLabel:"My Medications", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[ { char:"patient_has_reactions", op:"=", val:"true" }, { char:"patient_takes_meds", op:"=", val:"true" } ], logic:"AND" }, sug:0 }
+];
+
+const charMap = {};
+questions.forEach(q => {
+  if (q.chars && q.options) {
+    q.options.forEach((opt, i) => { if (q.chars[i]) charMap[q.chars[i]] = { q, opt }; });
+  } else if (q.chars) {
+    q.chars.forEach(ch => { charMap[ch] = { q, opt: null }; });
+  }
+});
+
+const typeIcons = {
+  'text-field': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>',
+  'radio': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>',
+  'text-area': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h10"/></svg>',
+  'date': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>'
+};
+
+const sel = document.getElementById('q-select');
+questions.forEach(q => {
+  const o = document.createElement('option');
+  o.value = q.id;
+  o.textContent = `${q.qid} \u2014 ${q.text}`;
+  sel.appendChild(o);
+});
+
+function getParents(q) {
+  if (!q.enableWhen) return [];
+  const parents = [];
+  q.enableWhen.conditions.forEach(c => {
+    const src = charMap[c.char];
+    if (src && !parents.find(p => p.q.id === src.q.id)) parents.push({ q: src.q, conditions: [] });
+  });
+  q.enableWhen.conditions.forEach(c => {
+    const src = charMap[c.char];
+    if (src) { const p = parents.find(x => x.q.id === src.q.id); if (p) p.conditions.push({ ...c, optionText: src.opt }); }
+  });
+  return parents;
+}
+
+function getChildren(q) {
+  const children = [];
+  questions.forEach(cq => {
+    if (!cq.enableWhen) return;
+    const conds = cq.enableWhen.conditions.filter(c => { const src = charMap[c.char]; return src && src.q.id === q.id; });
+    if (conds.length > 0) children.push({ q: cq, conditions: conds.map(c => ({ ...c, optionText: charMap[c.char]?.opt })), logic: cq.enableWhen.logic, totalConds: cq.enableWhen.conditions.length });
+  });
+  return children;
+}
+
+function buildCard(q, role, animClass) {
+  const cls = role === 'hero' ? 'card hero' : `card ${role}`;
+  const clickAttr = role !== 'hero' ? `onclick="renderQuestion(${q.id}); document.getElementById('q-select').value=${q.id}"` : '';
+
+  let optionsHTML = '';
+  if (q.options) {
+    optionsHTML = `<div class="card-opts">${q.options.map((o, i) => {
+      const ch = q.chars?.[i];
+      return `<span class="card-chip" title="${ch || ''}">${o}</span>`;
+    }).join('')}</div>`;
+  }
+
+  let charsHTML = '';
+  if (q.chars && role === 'hero') {
+    charsHTML = `<div class="card-char">${q.chars.map(c => `<span>${c}</span>`).join('')}</div>`;
+  }
+
+  return `
+    <div class="${cls} anim ${animClass}" ${clickAttr}>
+      ${role === 'child' ? '<div class="port port-top"></div>' : ''}
+      <div class="card-body">
+        <div class="card-head">
+          <span class="cat-dot ${q.category}"></span>
+          <span class="card-num">${q.qid}</span>
+          <span class="card-type">${typeIcons[q.type] || ''}</span>
+          ${q.sug > 0 ? `<span class="card-sug">${q.sug} suggestion${q.sug !== 1 ? 's' : ''}</span>` : ''}
+        </div>
+        <div class="card-text">${q.text}</div>
+        <span class="card-cat">${q.catLabel}</span>
+        ${optionsHTML}
+        ${charsHTML}
+      </div>
+      ${role === 'parent' ? '<div class="port port-bottom"></div>' : ''}
+      ${role === 'hero' && getChildren(q).length > 0 ? '<div class="port port-bottom"></div>' : ''}
+      ${role === 'hero' && getParents(q).length > 0 ? '<div class="port port-top"></div>' : ''}
+    </div>
+  `;
+}
+
+function buildEdgeLabel(conditions, logic, totalConds) {
+  return conditions.map((c, i) => {
+    let text = c.optionText ? `= "${c.optionText}"` : `${c.op} ${c.val || ''}`;
+    let badge = '';
+    if (totalConds > 1 && i === 0) badge = `<span class="logic-badge ${logic.toLowerCase()}">${logic}</span>`;
+    return `<span class="edge-label">${badge} ${text}</span>`;
+  }).join('');
+}
+
+function renderQuestion(id) {
+  const canvas = document.getElementById('canvas');
+  const q = questions.find(x => x.id === id);
+
+  if (!q) {
+    canvas.innerHTML = `
+      <div class="empty-state">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h3>Choose a question</h3>
+        <p>Select a question from the dropdown above to explore its conditional logic and relationships.</p>
+      </div>`;
+    return;
+  }
+
+  const parents = getParents(q);
+  const children = getChildren(q);
+  const hasParents = parents.length > 0;
+  const hasChildren = children.length > 0;
+
+  let html = '';
+
+  if (hasParents) {
+    html += `<div class="row-label anim anim-d1">Depends on</div>`;
+    html += `<div class="row anim anim-d1">`;
+    parents.forEach(p => { html += buildCard(p.q, 'parent', 'anim-d1'); });
+    html += `</div>`;
+
+    html += `<div class="connector-zone anim anim-d2">`;
+    html += `<div class="v-line-organic"></div>`;
+    html += `<div class="edge-label-row">`;
+    parents.forEach(p => { html += buildEdgeLabel(p.conditions, q.enableWhen.logic, q.enableWhen.conditions.length); });
+    html += `</div>`;
+    html += `<div class="v-line-organic"></div>`;
+    html += `<div class="arrow-down"></div>`;
+    html += `</div>`;
+  }
+
+  if (!hasParents) {
+    html += `<div style="margin-bottom: 10px" class="anim anim-d1">
+      <span class="always-shown">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Always shown
+      </span>
+    </div>`;
+  }
+
+  html += `<div class="row anim ${hasParents ? 'anim-d3' : 'anim-d2'}">`;
+  html += buildCard(q, 'hero', hasParents ? 'anim-d3' : 'anim-d2');
+  html += `</div>`;
+
+  if (hasChildren) {
+    html += `<div class="connector-zone anim anim-d4">`;
+    html += `<div class="v-line-organic"></div>`;
+    html += `<div class="arrow-down"></div>`;
+    html += `</div>`;
+
+    html += `<div class="edge-label-row anim anim-d4" style="margin-bottom:14px">`;
+    children.forEach(ch => { html += buildEdgeLabel(ch.conditions, ch.logic, ch.totalConds); });
+    html += `</div>`;
+
+    html += `<div class="row-label anim anim-d4">Controls display of</div>`;
+    html += `<div class="row anim anim-d5">`;
+    children.forEach(ch => { html += buildCard(ch.q, 'child', 'anim-d5'); });
+    html += `</div>`;
+  }
+
+  if (!hasParents && !hasChildren) {
+    html += `<div style="margin-top: 28px; text-align:center;" class="anim anim-d3">
+      <p style="font-size:14px; color:var(--text-dim); font-family:'Lora',serif; font-style:italic;">This question has no conditional relationships.</p>
+    </div>`;
+  }
+
+  canvas.innerHTML = html;
+}
+
+sel.value = 10;
+renderQuestion(10);
+</script>
+</body>
+</html>

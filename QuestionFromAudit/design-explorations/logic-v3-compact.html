@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logic View — Dense Data Table</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAFAFA;
+    --surface: #FFFFFF;
+    --border: #E5E5E5;
+    --border-light: #F0F0F0;
+    --brand: #4A90A4;
+    --brand-bg: rgba(74, 144, 164, 0.08);
+    --brand-border: rgba(74, 144, 164, 0.2);
+    --text-primary: #171717;
+    --text-secondary: #525252;
+    --text-dim: #A3A3A3;
+    --tree-line: #D4D4D4;
+    --cat-identity: #4A90A4;
+    --cat-allergies: #DC2626;
+    --cat-medications: #059669;
+    --badge-and-bg: #FEF3C7;
+    --badge-and-text: #92400E;
+    --badge-or-bg: #DBEAFE;
+    --badge-or-text: #1E40AF;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    font-size: 12px;
+  }
+
+  /* HEADER */
+  .header {
+    height: 44px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-logo {
+    width: 22px; height: 22px;
+    background: var(--brand);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-logo svg { width: 12px; height: 12px; color: white; }
+  .header-title { font-size: 12px; font-weight: 600; }
+  .header-sep { color: var(--text-dim); }
+  .header-sub { font-size: 11px; color: var(--text-dim); }
+
+  .q-select {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 300px;
+    outline: none;
+  }
+  .q-select:focus { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-bg); }
+
+  /* MAIN CONTENT */
+  .content {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+  }
+
+  /* BANNER */
+  .banner {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+  }
+  .banner-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .banner-qid {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    color: var(--brand);
+    background: var(--brand-bg);
+    padding: 2px 8px; border-radius: 3px;
+  }
+  .banner-type {
+    font-size: 10px; font-weight: 500;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .banner-cat {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 6px; border-radius: 3px;
+    margin-left: auto;
+  }
+  .banner-text {
+    font-size: 16px; font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-primary);
+  }
+  .banner-meta {
+    display: flex; gap: 16px; margin-top: 8px;
+    font-size: 11px; color: var(--text-dim);
+  }
+  .banner-meta span { display: flex; align-items: center; gap: 4px; }
+  .banner-meta svg { width: 12px; height: 12px; }
+
+  .banner-options {
+    display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap;
+  }
+  .banner-chip {
+    font-size: 11px; font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 2px 10px; border-radius: 3px;
+  }
+  .banner-chars {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--text-dim);
+    margin-top: 6px;
+  }
+  .banner-always {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600;
+    color: #059669; background: #ECFDF5;
+    padding: 3px 8px; border-radius: 3px;
+    margin-top: 8px;
+  }
+  .banner-always svg { width: 12px; height: 12px; }
+
+  /* SECTIONS */
+  .section {
+    border-bottom: 1px solid var(--border);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 24px;
+    background: var(--bg);
+    cursor: pointer;
+    user-select: none;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border-light);
+  }
+  .section-header:hover { background: #F5F5F5; }
+  .section-chevron {
+    width: 12px; height: 12px;
+    transition: transform 150ms;
+    color: var(--text-dim);
+  }
+  .section-chevron.collapsed { transform: rotate(-90deg); }
+  .section-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    color: var(--brand);
+    background: var(--brand-bg);
+    padding: 1px 6px; border-radius: 3px;
+  }
+
+  .section-body { display: block; }
+  .section-body.collapsed { display: none; }
+
+  /* TABLE */
+  .tree-table {
+    width: 100%;
+  }
+
+  .tree-row {
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    height: 36px;
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: background 100ms;
+    font-size: 12px;
+  }
+  .tree-row:hover { background: var(--brand-bg); }
+  .tree-row:last-child { border-bottom: none; }
+
+  .tree-indent {
+    display: flex;
+    align-items: center;
+    width: 24px;
+    flex-shrink: 0;
+    position: relative;
+    height: 100%;
+  }
+  .tree-indent::before {
+    content: '';
+    position: absolute;
+    left: 6px; top: 0;
+    width: 1px; height: 50%;
+    background: var(--tree-line);
+  }
+  .tree-indent::after {
+    content: '';
+    position: absolute;
+    left: 6px; top: 50%;
+    width: 10px; height: 1px;
+    background: var(--tree-line);
+  }
+  .tree-row:last-child .tree-indent::before { height: 50%; }
+
+  .tree-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+  .tree-dot.identity { background: var(--cat-identity); }
+  .tree-dot.allergies { background: var(--cat-allergies); }
+  .tree-dot.medications { background: var(--cat-medications); }
+
+  .col-qid {
+    width: 50px; flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .col-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .col-condition {
+    width: 180px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 4px;
+    padding-left: 12px;
+  }
+  .col-condition-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .col-category {
+    width: 110px; flex-shrink: 0;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .logic-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 1px 4px; border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .logic-badge.and { background: var(--badge-and-bg); color: var(--badge-and-text); }
+  .logic-badge.or  { background: var(--badge-or-bg);  color: var(--badge-or-text); }
+
+  /* Table header */
+  .table-header {
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    height: 28px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg);
+  }
+  .table-header .col-qid,
+  .table-header .col-text,
+  .table-header .col-condition,
+  .table-header .col-category { color: var(--text-dim); font-weight: 600; }
+  .table-header .tree-indent { visibility: hidden; }
+  .table-header .tree-dot { visibility: hidden; }
+
+  /* Category helpers */
+  .catbg-identity    { background:#EDF7FA; color:#2C6B7D; }
+  .catbg-allergies   { background:#FEF2F2; color:#991B1B; }
+  .catbg-medications { background:#ECFDF5; color:#065F46; }
+
+  /* EMPTY */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+  .empty-state h3 { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+  .empty-state p { font-size: 12px; max-width: 320px; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .anim { animation: fadeIn 200ms ease both; }
+  .anim-d1 { animation-delay: 30ms; }
+  .anim-d2 { animation-delay: 80ms; }
+  .anim-d3 { animation-delay: 130ms; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+    <span class="header-title">Logic View</span>
+    <span class="header-sep">/</span>
+    <span class="header-sub">Question Relationships</span>
+  </div>
+  <select class="q-select" id="q-select" onchange="renderQuestion(+this.value)">
+    <option value="">Select question...</option>
+  </select>
+</div>
+
+<div class="content" id="content"></div>
+
+<script>
+const questions = [
+  { id:1, qid:"Q1", text:"What is your name?", category:"identity", catLabel:"Who I Am", type:"text-field", options:null, chars:null, enableWhen:null, sug:0 },
+  { id:2, qid:"Q2", text:"Is this the name you'd like doctors to use?", category:"identity", catLabel:"Who I Am", type:"radio", options:["Yes","No"], chars:["patient_has_preferred_name","patient_has_no_preferred_name"], enableWhen:null, sug:2 },
+  { id:3, qid:"Q3", text:"What name would you prefer?", category:"identity", catLabel:"Who I Am", type:"text-field", options:null, chars:["patients_preferred_name"], enableWhen:{ conditions:[{ char:"patient_has_no_preferred_name", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:4, qid:"Q4", text:"Do you have any allergies?", category:"allergies", catLabel:"Allergies", type:"radio", options:["Yes","No"], chars:["patient_has_allergies","patient_has_no_allergies"], enableWhen:null, sug:1 },
+  { id:5, qid:"Q5", text:"Please list your allergies", category:"allergies", catLabel:"Allergies", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[{ char:"patient_has_allergies", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:6, qid:"Q6", text:"What is your date of birth?", category:"identity", catLabel:"Who I Am", type:"date", options:null, chars:["patient_age"], enableWhen:null, sug:0 },
+  { id:7, qid:"Q7", text:"Are you currently taking medication?", category:"medications", catLabel:"My Medications", type:"radio", options:["Yes","No"], chars:["patient_takes_meds","patient_no_meds"], enableWhen:null, sug:3 },
+  { id:8, qid:"Q8", text:"List your current medications", category:"medications", catLabel:"My Medications", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[{ char:"patient_takes_meds", op:"=", val:"true" }], logic:"AND" }, sug:0 },
+  { id:9, qid:"Q9", text:"Have you had adverse reactions to any medication?", category:"medications", catLabel:"My Medications", type:"radio", options:["Yes","No"], chars:["patient_has_reactions","patient_no_reactions"], enableWhen:{ conditions:[{ char:"patient_takes_meds", op:"=", val:"true" }], logic:"AND" }, sug:1 },
+  { id:10, qid:"Q10", text:"Describe the reactions experienced", category:"medications", catLabel:"My Medications", type:"text-area", options:null, chars:null, enableWhen:{ conditions:[ { char:"patient_has_reactions", op:"=", val:"true" }, { char:"patient_takes_meds", op:"=", val:"true" } ], logic:"AND" }, sug:0 }
+];
+
+const charMap = {};
+questions.forEach(q => {
+  if (q.chars && q.options) {
+    q.options.forEach((opt, i) => { if (q.chars[i]) charMap[q.chars[i]] = { q, opt }; });
+  } else if (q.chars) {
+    q.chars.forEach(ch => { charMap[ch] = { q, opt: null }; });
+  }
+});
+
+const sel = document.getElementById('q-select');
+questions.forEach(q => {
+  const o = document.createElement('option');
+  o.value = q.id;
+  o.textContent = `${q.qid} — ${q.text}`;
+  sel.appendChild(o);
+});
+
+function getParents(q) {
+  if (!q.enableWhen) return [];
+  const parents = [];
+  q.enableWhen.conditions.forEach(c => {
+    const src = charMap[c.char];
+    if (src && !parents.find(p => p.q.id === src.q.id)) parents.push({ q: src.q, conditions: [] });
+  });
+  q.enableWhen.conditions.forEach(c => {
+    const src = charMap[c.char];
+    if (src) { const p = parents.find(x => x.q.id === src.q.id); if (p) p.conditions.push({ ...c, optionText: src.opt }); }
+  });
+  return parents;
+}
+
+function getChildren(q) {
+  const children = [];
+  questions.forEach(cq => {
+    if (!cq.enableWhen) return;
+    const conds = cq.enableWhen.conditions.filter(c => { const src = charMap[c.char]; return src && src.q.id === q.id; });
+    if (conds.length > 0) children.push({ q: cq, conditions: conds.map(c => ({ ...c, optionText: charMap[c.char]?.opt })), logic: cq.enableWhen.logic, totalConds: cq.enableWhen.conditions.length });
+  });
+  return children;
+}
+
+function conditionText(conditions, logic, totalConds) {
+  return conditions.map((c, i) => {
+    const text = c.optionText ? `= "${c.optionText}"` : `${c.op} ${c.val || ''}`;
+    const prefix = (totalConds > 1 && i > 0) ? ` ${logic} ` : '';
+    return prefix + text;
+  }).join('');
+}
+
+function toggleSection(id) {
+  const body = document.getElementById('section-body-' + id);
+  const chev = document.getElementById('section-chev-' + id);
+  body.classList.toggle('collapsed');
+  chev.classList.toggle('collapsed');
+}
+
+function renderQuestion(id) {
+  const content = document.getElementById('content');
+  const q = questions.find(x => x.id === id);
+
+  if (!q) {
+    content.innerHTML = `<div class="empty-state"><h3>Select a question</h3><p>Choose a question from the dropdown to inspect its logic dependencies and dependents.</p></div>`;
+    return;
+  }
+
+  const parents = getParents(q);
+  const children = getChildren(q);
+
+  let html = '';
+
+  // Banner
+  html += `<div class="banner anim anim-d1">`;
+  html += `<div class="banner-top">`;
+  html += `<span class="banner-qid">${q.qid}</span>`;
+  html += `<span class="banner-type">${q.type}</span>`;
+  if (q.sug > 0) html += `<span style="font-size:10px;font-weight:600;color:var(--brand);background:var(--brand-bg);padding:2px 6px;border-radius:3px;margin-left:4px">${q.sug} suggestion${q.sug !== 1 ? 's' : ''}</span>`;
+  html += `<span class="banner-cat catbg-${q.category}">${q.catLabel}</span>`;
+  html += `</div>`;
+  html += `<div class="banner-text">${q.text}</div>`;
+
+  html += `<div class="banner-meta">`;
+  html += `<span>Parents: ${parents.length}</span>`;
+  html += `<span>Children: ${children.length}</span>`;
+  if (q.enableWhen) html += `<span>Logic: ${q.enableWhen.logic}</span>`;
+  html += `</div>`;
+
+  if (q.options) {
+    html += `<div class="banner-options">${q.options.map((o, i) => `<span class="banner-chip" title="${q.chars?.[i] || ''}">${o}</span>`).join('')}</div>`;
+  }
+  if (q.chars) {
+    html += `<div class="banner-chars">${q.chars.join(' | ')}</div>`;
+  }
+  if (!q.enableWhen) {
+    html += `<div class="banner-always"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Always shown</div>`;
+  }
+  html += `</div>`;
+
+  // Parents section
+  html += `<div class="section anim anim-d2">`;
+  html += `<div class="section-header" onclick="toggleSection('parents')">`;
+  html += `<svg class="section-chevron" id="section-chev-parents" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
+  html += `Dependencies (parents)`;
+  html += `<span class="section-count">${parents.length}</span>`;
+  html += `</div>`;
+  html += `<div class="section-body" id="section-body-parents">`;
+
+  if (parents.length > 0) {
+    html += `<div class="table-header"><div class="tree-indent"></div><div class="tree-dot"></div><div class="col-qid">ID</div><div class="col-text">Question</div><div class="col-condition">Condition</div><div class="col-category">Category</div></div>`;
+    parents.forEach(p => {
+      const cond = conditionText(p.conditions, q.enableWhen.logic, q.enableWhen.conditions.length);
+      html += `<div class="tree-row" onclick="renderQuestion(${p.q.id}); document.getElementById('q-select').value=${p.q.id}">`;
+      html += `<div class="tree-indent"></div>`;
+      html += `<div class="tree-dot ${p.q.category}"></div>`;
+      html += `<div class="col-qid">${p.q.qid}</div>`;
+      html += `<div class="col-text">${p.q.text}</div>`;
+      html += `<div class="col-condition">`;
+      if (q.enableWhen.conditions.length > 1) html += `<span class="logic-badge ${q.enableWhen.logic.toLowerCase()}">${q.enableWhen.logic}</span>`;
+      html += `<span class="col-condition-text">${cond}</span></div>`;
+      html += `<div class="col-category">${p.q.catLabel}</div>`;
+      html += `</div>`;
+    });
+  } else {
+    html += `<div style="padding:12px 24px;font-size:11px;color:var(--text-dim)">No parent dependencies. This question is always displayed.</div>`;
+  }
+  html += `</div></div>`;
+
+  // Children section
+  html += `<div class="section anim anim-d3">`;
+  html += `<div class="section-header" onclick="toggleSection('children')">`;
+  html += `<svg class="section-chevron" id="section-chev-children" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
+  html += `Dependents (children)`;
+  html += `<span class="section-count">${children.length}</span>`;
+  html += `</div>`;
+  html += `<div class="section-body" id="section-body-children">`;
+
+  if (children.length > 0) {
+    html += `<div class="table-header"><div class="tree-indent"></div><div class="tree-dot"></div><div class="col-qid">ID</div><div class="col-text">Question</div><div class="col-condition">Condition</div><div class="col-category">Category</div></div>`;
+    children.forEach(ch => {
+      const cond = conditionText(ch.conditions, ch.logic, ch.totalConds);
+      html += `<div class="tree-row" onclick="renderQuestion(${ch.q.id}); document.getElementById('q-select').value=${ch.q.id}">`;
+      html += `<div class="tree-indent"></div>`;
+      html += `<div class="tree-dot ${ch.q.category}"></div>`;
+      html += `<div class="col-qid">${ch.q.qid}</div>`;
+      html += `<div class="col-text">${ch.q.text}</div>`;
+      html += `<div class="col-condition">`;
+      if (ch.totalConds > 1) html += `<span class="logic-badge ${ch.logic.toLowerCase()}">${ch.logic}</span>`;
+      html += `<span class="col-condition-text">${cond}</span></div>`;
+      html += `<div class="col-category">${ch.q.catLabel}</div>`;
+      html += `</div>`;
+    });
+  } else {
+    html += `<div style="padding:12px 24px;font-size:11px;color:var(--text-dim)">No dependent questions controlled by this question.</div>`;
+  }
+  html += `</div></div>`;
+
+  content.innerHTML = html;
+}
+
+sel.value = 10;
+renderQuestion(10);
+</script>
+</body>
+</html>

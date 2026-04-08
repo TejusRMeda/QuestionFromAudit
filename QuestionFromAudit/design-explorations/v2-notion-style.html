@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust Instance — Notion-style</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#4A90A4',
+        accent: '#2563EB',
+      }
+    }
+  }
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .sidebar-item { padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.1s; font-size: 14px; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-item:hover { background: #f3f4f6; }
+  .sidebar-item.active { background: #EBF5FF; color: #2563EB; font-weight: 500; }
+  .section-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9CA3AF; padding: 8px 12px 4px; }
+  .inline-edit:hover { background: #f9fafb; border-radius: 6px; outline: 1px dashed #d1d5db; }
+  .breadcrumb-sep { color: #d1d5db; margin: 0 6px; }
+</style>
+</head>
+<body class="bg-white h-screen flex flex-col overflow-hidden">
+
+  <!-- Minimal Header / Breadcrumb -->
+  <header class="border-b border-gray-100 px-4 py-2.5 flex items-center justify-between">
+    <div class="flex items-center text-sm">
+      <span class="text-gray-400 hover:text-gray-600 cursor-pointer">St. Mary's NHS Trust</span>
+      <span class="breadcrumb-sep">/</span>
+      <span class="text-gray-400 hover:text-gray-600 cursor-pointer">My Health</span>
+      <span class="breadcrumb-sep">/</span>
+      <span class="text-gray-800 font-medium">Have you had an anaesthetic before?</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="relative">
+        <select class="text-xs bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1.5 text-gray-500 appearance-none pr-6 focus:outline-none">
+          <option>Audit View</option>
+          <option>Patient View</option>
+        </select>
+        <svg class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- Left Sidebar -->
+    <aside class="w-[280px] border-r border-gray-100 flex flex-col bg-gray-50/50 overflow-hidden">
+      <!-- Sidebar Search -->
+      <div class="p-3">
+        <div class="relative">
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" placeholder="Search..." class="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent">
+        </div>
+      </div>
+
+      <!-- Question List -->
+      <nav class="flex-1 overflow-y-auto px-2 pb-4">
+        <!-- Who I Am -->
+        <div class="section-header flex items-center gap-1.5">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          Who I Am
+          <span class="ml-auto text-[10px] text-gray-300 font-normal normal-case tracking-normal">2</span>
+        </div>
+        <div class="sidebar-item">Is this the name that you would like...</div>
+        <div class="sidebar-item">What name would you prefer to be called?</div>
+
+        <!-- My Health -->
+        <div class="section-header flex items-center gap-1.5 mt-3">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          My Health
+          <span class="ml-auto text-[10px] text-gray-300 font-normal normal-case tracking-normal">3</span>
+        </div>
+        <div class="sidebar-item active flex items-center gap-2">
+          <span class="flex-1 truncate">Have you had an anaesthetic before?</span>
+          <span class="flex-shrink-0 w-4 h-4 rounded-full bg-accent/10 text-accent text-[10px] flex items-center justify-center font-medium">2</span>
+        </div>
+        <div class="sidebar-item">Sample Checklist</div>
+        <div class="sidebar-item">Do you have any existing medical conditions?</div>
+
+        <!-- My Medications -->
+        <div class="section-header flex items-center gap-1.5 mt-3">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          My Medications
+          <span class="ml-auto text-[10px] text-gray-300 font-normal normal-case tracking-normal">2</span>
+        </div>
+        <div class="sidebar-item">Are you currently taking any medications?</div>
+        <div class="sidebar-item flex items-center gap-1">
+          <span class="flex-1 truncate">Please list your current medications...</span>
+          <svg class="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+
+        <!-- Allergies -->
+        <div class="section-header flex items-center gap-1.5 mt-3">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          Allergies
+          <span class="ml-auto text-[10px] text-gray-300 font-normal normal-case tracking-normal">2</span>
+        </div>
+        <div class="sidebar-item">Do you have any allergies?</div>
+        <div class="sidebar-item flex items-center gap-1">
+          <span class="flex-1 truncate">Please describe your allergies...</span>
+          <svg class="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">
+      <div class="max-w-3xl mx-auto py-10 px-8">
+
+        <!-- Question Title -->
+        <div class="mb-8">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-gray-400 font-mono">Q-003</span>
+            <span class="text-xs text-gray-400">·</span>
+            <span class="text-xs text-gray-400">My Health</span>
+            <span class="text-xs text-gray-400">·</span>
+            <span class="text-xs text-gray-400">Required</span>
+          </div>
+          <h1 class="text-2xl font-semibold text-gray-900 leading-tight inline-edit py-1 px-1">Have you had an anaesthetic before?</h1>
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-gray-100 my-6"></div>
+
+        <!-- Answer Type Section -->
+        <section class="mb-8">
+          <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Answer Type</h2>
+          <div class="flex items-center gap-3 inline-edit py-2 px-2">
+            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-800">Single Choice</p>
+              <p class="text-xs text-gray-400">Patient selects one option</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Answer Options Section -->
+        <section class="mb-8">
+          <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Answer Options</h2>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3 group inline-edit py-2 px-3">
+              <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
+              <span class="text-[15px] text-gray-800">Yes</span>
+              <svg class="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 ml-auto transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </div>
+            <div class="flex items-center gap-3 group inline-edit py-2 px-3">
+              <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
+              <span class="text-[15px] text-gray-800">No</span>
+              <svg class="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 ml-auto transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </div>
+            <div class="flex items-center gap-3 group inline-edit py-2 px-3">
+              <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0"></span>
+              <span class="text-[15px] text-gray-800">Don't know</span>
+              <svg class="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 ml-auto transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="border-t border-gray-100 my-6"></div>
+
+        <!-- Helper Information -->
+        <section class="mb-8">
+          <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Helper Information</h2>
+          <div class="inline-edit py-2 px-3 rounded-lg">
+            <p class="text-sm text-gray-600 leading-relaxed">This includes general anaesthetics, local anaesthetics, and sedation for any previous procedures or surgeries.</p>
+          </div>
+        </section>
+
+        <!-- Conditional Logic -->
+        <section class="mb-8">
+          <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Conditional Logic</h2>
+          <div class="bg-blue-50/50 rounded-lg p-4 border border-blue-100">
+            <p class="text-sm text-gray-600">
+              <span class="text-blue-600 font-medium">No conditions</span> — this question is always visible.
+            </p>
+          </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="border-t border-gray-100 my-6"></div>
+
+        <!-- Suggestions -->
+        <section class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Suggestions (2)</h2>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Suggestion 1 -->
+            <div class="border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span class="text-[10px] font-semibold text-primary">JD</span>
+                  </div>
+                  <span class="text-sm font-medium text-gray-800">Dr. J. Davies</span>
+                  <span class="text-xs text-gray-400">2 days ago</span>
+                </div>
+                <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Pending</span>
+              </div>
+              <p class="text-sm text-gray-600 leading-relaxed">Consider adding "Spinal anaesthetic" as a sub-option when "Yes" is selected, to differentiate types of prior anaesthetic experience.</p>
+              <div class="flex items-center gap-2 mt-3">
+                <button class="text-xs text-gray-400 hover:text-gray-600">Reply</button>
+                <span class="text-gray-200">·</span>
+                <button class="text-xs text-green-600 hover:text-green-700 font-medium">Approve</button>
+                <span class="text-gray-200">·</span>
+                <button class="text-xs text-red-500 hover:text-red-600">Reject</button>
+              </div>
+            </div>
+
+            <!-- Suggestion 2 -->
+            <div class="border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span class="text-[10px] font-semibold text-purple-600">SP</span>
+                  </div>
+                  <span class="text-sm font-medium text-gray-800">S. Patel</span>
+                  <span class="text-xs text-gray-400">5 days ago</span>
+                </div>
+                <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Pending</span>
+              </div>
+              <p class="text-sm text-gray-600 leading-relaxed">The helper text should mention that dental anaesthetics also count, as patients often forget to include those.</p>
+              <div class="flex items-center gap-2 mt-3">
+                <button class="text-xs text-gray-400 hover:text-gray-600">Reply</button>
+                <span class="text-gray-200">·</span>
+                <button class="text-xs text-green-600 hover:text-green-700 font-medium">Approve</button>
+                <span class="text-gray-200">·</span>
+                <button class="text-xs text-red-500 hover:text-red-600">Reject</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add Suggestion -->
+          <div class="mt-4">
+            <textarea class="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent resize-none" rows="2" placeholder="Add a suggestion..."></textarea>
+            <div class="flex justify-end mt-2">
+              <button class="px-4 py-1.5 text-sm font-medium text-white bg-accent hover:bg-blue-700 rounded-lg transition">Submit</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Review Changes FAB -->
+  <div class="fixed bottom-6 right-6 z-50">
+    <button class="flex items-center gap-2 px-5 py-3 bg-accent text-white rounded-full shadow-lg hover:bg-blue-700 transition font-medium text-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Review Changes
+      <span class="bg-white/20 rounded-full px-2 py-0.5 text-xs">3</span>
+    </button>
+  </div>
+
+</body>
+</html>

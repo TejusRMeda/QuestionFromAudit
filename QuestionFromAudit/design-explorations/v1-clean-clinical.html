@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust Instance — Clean Clinical</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#4A90A4',
+        'primary-light': '#E8F2F6',
+        'primary-dark': '#3A7388',
+        slate: {
+          50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+          400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+          800: '#1e293b', 900: '#0f172a'
+        }
+      }
+    }
+  }
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .category-who { border-left-color: #4A90A4; }
+  .category-health { border-left-color: #7C3AED; }
+  .category-meds { border-left-color: #059669; }
+  .category-allergies { border-left-color: #DC2626; }
+  .chip { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; background: #f1f5f9; color: #475569; }
+  .edit-panel { box-shadow: 0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04); }
+  .icon-tab { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; transition: all 0.15s; color: #94a3b8; }
+  .icon-tab:hover { background: #f1f5f9; color: #475569; }
+  .icon-tab.active { background: #E8F2F6; color: #4A90A4; }
+  .question-divider { border-bottom: 1px solid #e2e8f0; }
+  .question-divider:last-child { border-bottom: none; }
+</style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 px-6 py-3.5">
+    <div class="max-w-[1800px] mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h1 class="text-lg font-semibold text-slate-800">St. Mary's NHS Trust</h1>
+        <span class="chip">24 questions</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">Audit View</button>
+        <button class="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-lg">Patient View</button>
+        <div class="w-px h-6 bg-slate-200 mx-1"></div>
+        <button class="px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Search -->
+  <div class="bg-white border-b border-slate-100 px-6 py-2.5">
+    <div class="max-w-[1800px] mx-auto flex items-center gap-3">
+      <div class="relative flex-1 max-w-md">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" placeholder="Search questions..." class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+      </div>
+      <select class="text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20">
+        <option>All Categories</option>
+        <option>Who I Am</option>
+        <option>My Health</option>
+        <option>My Medications</option>
+        <option>Allergies</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex overflow-hidden max-w-[1800px] mx-auto w-full">
+
+    <!-- Left Panel — Questions -->
+    <div class="w-[55%] overflow-y-auto py-5 px-6">
+      <div class="space-y-0">
+
+        <!-- Question 1 -->
+        <div class="question-divider py-4 pl-4 border-l-[3px] category-who hover:bg-slate-50/60 cursor-pointer transition-colors">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-medium text-primary/80 uppercase tracking-wide">Who I Am</span>
+            <span class="chip">Single Choice</span>
+          </div>
+          <p class="text-[15px] text-slate-800 leading-relaxed mb-2">Is this the name that you would like the doctors and nurses to use to address you?</p>
+          <div class="flex gap-2">
+            <span class="chip">Yes</span>
+            <span class="chip">No</span>
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="question-divider py-4 pl-4 border-l-[3px] category-who hover:bg-slate-50/60 cursor-pointer transition-colors">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-medium text-primary/80 uppercase tracking-wide">Who I Am</span>
+            <span class="chip">Free Text</span>
+          </div>
+          <p class="text-[15px] text-slate-800 leading-relaxed mb-2">What name would you prefer to be called?</p>
+          <div class="flex gap-2">
+            <span class="chip bg-slate-100 text-slate-400 italic">Text input</span>
+          </div>
+        </div>
+
+        <!-- Question 3 — Selected -->
+        <div class="question-divider py-4 pl-4 border-l-[3px] category-health bg-primary-light/40 cursor-pointer transition-colors rounded-r-lg">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-medium text-purple-600/80 uppercase tracking-wide">My Health</span>
+            <span class="chip">Single Choice</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">2 suggestions</span>
+          </div>
+          <p class="text-[15px] text-slate-800 leading-relaxed font-medium mb-2">Have you had an anaesthetic before?</p>
+          <div class="flex gap-2">
+            <span class="chip">Yes</span>
+            <span class="chip">No</span>
+            <span class="chip">Don't know</span>
+          </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="question-divider py-4 pl-4 border-l-[3px] category-health hover:bg-slate-50/60 cursor-pointer transition-colors">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-medium text-purple-600/80 uppercase tracking-wide">My Health</span>
+            <span class="chip">Multiple Choice</span>
+          </div>
+          <p class="text-[15px] text-slate-800 leading-relaxed mb-2">Sample Checklist</p>
+          <div class="flex flex-wrap gap-2">
+            <span class="chip">Checklist Item 1</span>
+            <span class="chip">Checklist Item 2</span>
+            <span class="chip">Checklist Item 3</span>
+            <span class="chip">+3 more</span>
+          </div>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="question-divider py-4 pl-4 border-l-[3px] category-meds hover:bg-slate-50/60 cursor-pointer transition-colors">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-medium text-emerald-600/80 uppercase tracking-wide">My Medications</span>
+            <span class="chip">Single Choice</span>
+          </div>
+          <p class="text-[15px] text-slate-800 leading-relaxed mb-2">Are you currently taking any medications?</p>
+          <div class="flex gap-2">
+            <span class="chip">Yes</span>
+            <span class="chip">No</span>
+          </div>
+        </div>
+
+        <!-- Question 6 -->
+        <div class="question-divider py-4 pl-4 border-l-[3px] category-meds hover:bg-slate-50/60 cursor-pointer transition-colors">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-medium text-emerald-600/80 uppercase tracking-wide">My Medications</span>
+            <span class="chip">Free Text</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">Conditional</span>
+          </div>
+          <p class="text-[15px] text-slate-800 leading-relaxed mb-2">Please list your current medications and dosages</p>
+          <div class="flex gap-2">
+            <span class="chip bg-slate-100 text-slate-400 italic">Text input</span>
+          </div>
+        </div>
+
+        <!-- Question 7 -->
+        <div class="question-divider py-4 pl-4 border-l-[3px] category-allergies hover:bg-slate-50/60 cursor-pointer transition-colors">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-medium text-red-600/80 uppercase tracking-wide">Allergies</span>
+            <span class="chip">Single Choice</span>
+          </div>
+          <p class="text-[15px] text-slate-800 leading-relaxed mb-2">Do you have any allergies?</p>
+          <div class="flex gap-2">
+            <span class="chip">Yes</span>
+            <span class="chip">No</span>
+            <span class="chip">Not sure</span>
+          </div>
+        </div>
+
+        <!-- Question 8 -->
+        <div class="question-divider py-4 pl-4 border-l-[3px] category-allergies hover:bg-slate-50/60 cursor-pointer transition-colors">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs font-medium text-red-600/80 uppercase tracking-wide">Allergies</span>
+            <span class="chip">Free Text</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">Conditional</span>
+          </div>
+          <p class="text-[15px] text-slate-800 leading-relaxed mb-2">Please describe your allergies and any reactions you have experienced</p>
+          <div class="flex gap-2">
+            <span class="chip bg-slate-100 text-slate-400 italic">Text input</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Panel — Floating Edit Panel -->
+    <div class="w-[45%] p-5 flex">
+      <div class="edit-panel bg-white rounded-2xl border border-slate-200 flex flex-1 overflow-hidden">
+
+        <!-- Vertical Icon Sidebar -->
+        <div class="w-14 bg-slate-50 border-r border-slate-100 flex flex-col items-center py-4 gap-1">
+          <div class="icon-tab active" title="Settings">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <div class="icon-tab" title="Content">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </div>
+          <div class="icon-tab relative" title="Help">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div class="icon-tab" title="Logic">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div class="flex-1"></div>
+          <div class="icon-tab relative" title="Review">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500"></span>
+          </div>
+        </div>
+
+        <!-- Panel Content -->
+        <div class="flex-1 flex flex-col">
+          <!-- Panel Header -->
+          <div class="px-5 pt-5 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Q-003</span>
+              <span class="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">My Health</span>
+            </div>
+            <p class="text-sm text-slate-700 leading-relaxed">Have you had an anaesthetic before?</p>
+          </div>
+
+          <!-- Settings Content -->
+          <div class="flex-1 overflow-y-auto p-5 space-y-5">
+            <div>
+              <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">Required</label>
+              <div class="flex items-center gap-3">
+                <div class="relative">
+                  <input type="checkbox" checked class="sr-only peer">
+                  <div class="w-10 h-5 bg-primary rounded-full peer-checked:bg-primary"></div>
+                  <div class="absolute top-0.5 left-5 w-4 h-4 bg-white rounded-full shadow transition-all"></div>
+                </div>
+                <span class="text-sm text-slate-600">This question is required</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">Answer Type</label>
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+                  <span class="text-sm font-medium text-slate-700">Single Choice</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1 ml-6">Patient selects one option from the list</p>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">Answer Options</label>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                  <span class="w-4 h-4 rounded-full border-2 border-slate-300"></span>
+                  <span class="text-sm text-slate-700">Yes</span>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                  <span class="w-4 h-4 rounded-full border-2 border-slate-300"></span>
+                  <span class="text-sm text-slate-700">No</span>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                  <span class="w-4 h-4 rounded-full border-2 border-slate-300"></span>
+                  <span class="text-sm text-slate-700">Don't know</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">Suggest Changes</label>
+              <textarea class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" rows="3" placeholder="Describe your suggested change..."></textarea>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="px-5 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+            <button class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition">Cancel</button>
+            <button class="px-5 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-xl transition shadow-sm">Submit Suggestion</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

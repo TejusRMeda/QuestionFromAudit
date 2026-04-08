@@ -1,0 +1,6 @@
+Question_ID,Category,Question_Text,Answer_Type,Answer_Options
+Q001,Demographics,What is your age range?,radio,Under 18|18-30|31-50|Over 50
+Q002,Demographics,What is your gender?,radio,Male|Female|Non-binary|Prefer not to say
+Q003,Health,Do you have any chronic conditions?,multi_select,Diabetes|Heart Disease|Asthma|None
+Q004,Health,Please describe any additional health concerns,text,
+Q005,Lifestyle,How often do you exercise?,radio,Daily|Weekly|Monthly|Rarely|Never
