@@ -87,7 +87,7 @@ export default function SectionCardsView({
             <span className="font-semibold text-[#4A90A4]">{reviewedCount}</span> of{" "}
             {totalSections} sections reviewed
             {totalSuggested > 0 && (
-              <span className="text-slate-400"> · {totalSuggested} questions with drafts</span>
+              <span className="text-slate-500"> · {totalSuggested} questions with drafts</span>
             )}
           </p>
         )}
@@ -125,7 +125,7 @@ export default function SectionCardsView({
                   </span>
                 ) : (
                   <span className="flex-shrink-0 ml-2 w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center group-hover:bg-[#4A90A4]/10 transition-colors">
-                    <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#4A90A4] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#4A90A4] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </span>
@@ -154,7 +154,7 @@ export default function SectionCardsView({
                     </span>
                   ))}
                   {section.pages.length > 3 && (
-                    <span className="inline-block text-xs text-slate-400 px-1 py-0.5">
+                    <span className="inline-block text-xs text-slate-500 px-1 py-0.5">
                       +{section.pages.length - 3} more
                     </span>
                   )}
@@ -167,18 +167,18 @@ export default function SectionCardsView({
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-medium text-emerald-600">Reviewed</span>
                     {section.suggestedCount > 0 && (
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         · {section.suggestedCount} draft{section.suggestedCount !== 1 ? "s" : ""}
                       </span>
                     )}
                     {section.suggestedCount === 0 && (
-                      <span className="text-xs text-slate-400">· No changes needed</span>
+                      <span className="text-xs text-slate-500">· No changes needed</span>
                     )}
                   </div>
                 ) : (
                   <>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         {section.suggestedCount > 0
                           ? `${section.suggestedCount} draft${section.suggestedCount !== 1 ? "s" : ""} saved`
                           : "Not yet reviewed"}

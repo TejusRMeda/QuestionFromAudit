@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import config from "@/config";
-import { getSEOTags } from "@/libs/seo";
+import { getSEOTags } from "@/lib/seo";
 
 export const metadata = getSEOTags({
   title: `Sign-in to ${config.appName}`,

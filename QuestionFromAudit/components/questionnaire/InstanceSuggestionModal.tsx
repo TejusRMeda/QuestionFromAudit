@@ -177,7 +177,7 @@ export default function InstanceSuggestionModal({
           {/* Email */}
           <div>
             <Label className="font-medium mb-1.5">
-              Email <span className="text-slate-400">(optional)</span>
+              Email <span className="text-slate-500">(optional)</span>
             </Label>
             <Input
               type="email"
@@ -198,7 +198,7 @@ export default function InstanceSuggestionModal({
               <Label className="font-medium">
                 Suggested Change <span className="text-red-600">*</span>
               </Label>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 {suggestionText.length}/{MAX_SUGGESTION_LENGTH}
               </span>
             </div>
@@ -221,7 +221,7 @@ export default function InstanceSuggestionModal({
               <Label className="font-medium">
                 Reason for Change <span className="text-red-600">*</span>
               </Label>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 {reason.length}/{MAX_REASON_LENGTH}
               </span>
             </div>

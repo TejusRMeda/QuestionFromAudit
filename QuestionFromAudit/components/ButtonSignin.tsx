@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { User } from "@supabase/supabase-js";
-import { createClient } from "@/libs/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import config from "@/config";
 
 // A simple button to sign in with our providers (Google & Magic Links).
@@ -18,7 +18,7 @@ const ButtonSignin = ({
   extraStyle?: string;
 }) => {
   const supabase = createClient();
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const getUser = async () => {

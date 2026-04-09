@@ -27,7 +27,7 @@ interface TrustOverviewTableProps {
 export default function TrustOverviewTable({ rows }: TrustOverviewTableProps) {
   if (rows.length === 0) {
     return (
-      <div className="py-10 text-center text-slate-400">
+      <div className="py-10 text-center text-slate-500">
         <svg
           className="w-12 h-12 mx-auto mb-3 text-slate-200"
           fill="none"
@@ -71,7 +71,7 @@ export default function TrustOverviewTable({ rows }: TrustOverviewTableProps) {
               )}
             </TableCell>
             <TableCell className="text-slate-500 text-sm">{row.totalSuggestions}</TableCell>
-            <TableCell className="text-slate-400 text-sm">
+            <TableCell className="text-slate-500 text-sm">
               {new Date(row.createdAt).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",

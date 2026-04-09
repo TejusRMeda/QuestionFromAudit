@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Fragment } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Dialog, Transition } from "@headlessui/react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import toast from "react-hot-toast";
 
 interface MasterQuestionnaire {
@@ -140,39 +139,8 @@ export default function DashboardQuestionnaires({
       </div>
 
       {/* Delete Confirmation Modal */}
-      <Transition appear show={deleteTarget !== null} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-50"
-          onClose={() => {
-            if (!isDeleting) setDeleteTarget(null);
-          }}
-          initialFocus={cancelButtonRef}
-        >
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-neutral/50" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-sm transform overflow-hidden rounded-box bg-base-100 p-6 shadow-xl transition-all">
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !isDeleting) setDeleteTarget(null); }}>
+        <DialogContent className="w-full sm:max-w-sm overflow-hidden rounded-box bg-base-100 p-6 shadow-xl" showCloseButton={false}>
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
                       <svg
@@ -190,9 +158,9 @@ export default function DashboardQuestionnaires({
                       </svg>
                     </div>
                     <div>
-                      <Dialog.Title className="text-lg font-semibold">
+                      <DialogTitle className="text-lg font-semibold">
                         Delete Questionnaire
-                      </Dialog.Title>
+                      </DialogTitle>
                       <p className="mt-2 text-sm text-base-content/70">
                         Are you sure you want to delete{" "}
                         <strong>{deleteTarget?.name}</strong>? This will
@@ -224,12 +192,8 @@ export default function DashboardQuestionnaires({
                       Delete
                     </button>
                   </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

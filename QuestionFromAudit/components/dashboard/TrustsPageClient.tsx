@@ -138,7 +138,7 @@ export default function TrustsPageClient({ masters, questionnaires }: Props) {
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-800">Trusts</h1>
-          <p className="text-sm text-slate-400 mt-0.5">All trust instances sharing your questionnaires</p>
+          <p className="text-sm text-slate-500 mt-0.5">All trust instances sharing your questionnaires</p>
         </div>
         <button
           type="button"
@@ -169,7 +169,7 @@ export default function TrustsPageClient({ masters, questionnaires }: Props) {
               />
             </svg>
             <h3 className="text-base font-medium text-slate-500 mb-2">No trusts yet</h3>
-            <p className="text-sm text-slate-400 mb-5">
+            <p className="text-sm text-slate-500 mb-5">
               Share a master questionnaire with a trust to get started.
             </p>
             <button

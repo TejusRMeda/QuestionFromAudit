@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { env } from "@/lib/env";
 
 /**
  * Creates a Supabase client bound to the current user's session (anon key + cookies).
@@ -10,8 +11,8 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -41,19 +42,8 @@ export async function createClient() {
  * Falls back to anon key if SUPABASE_SERVICE_ROLE_KEY is not yet configured.
  */
 export function createServiceClient() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) {
-    console.warn(
-      "[supabase] SUPABASE_SERVICE_ROLE_KEY not set — falling back to anon key. " +
-      "Set this key before applying the RLS migration."
-    );
-    return createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-  }
   return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY
   );
 }

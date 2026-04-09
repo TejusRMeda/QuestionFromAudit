@@ -262,7 +262,7 @@ export default function MobileEditModal({
             ref={tabsRef}
             className="flex-shrink-0 border-b border-slate-200 overflow-x-auto"
           >
-            <div className="flex min-w-max">
+            <div className="flex min-w-max" role="tablist">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 const hasChanges = tabHasChanges(tab.id);
@@ -271,7 +271,11 @@ export default function MobileEditModal({
                 return (
                   <button
                     key={tab.id}
+                    id={`mobile-tab-${tab.id}`}
                     data-active={isActive}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`mobile-tabpanel-${tab.id}`}
                     onClick={() => onTabChange(tab.id)}
                     className={`flex-shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors relative ${
                       isActive
@@ -294,7 +298,7 @@ export default function MobileEditModal({
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-auto p-4">{renderTabContent()}</div>
+          <div className="flex-1 overflow-auto p-4" role="tabpanel" id={`mobile-tabpanel-${activeTab}`} aria-labelledby={`mobile-tab-${activeTab}`}>{renderTabContent()}</div>
 
           {/* Footer Navigation (except on Review tab) */}
           {activeTab !== "review" && (

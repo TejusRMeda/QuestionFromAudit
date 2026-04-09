@@ -149,7 +149,7 @@ export default function SplitScreenLayout({
               onClick={onMobileBack}
               className="md:hidden flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-[#4A90A4] bg-white border-b border-slate-200 flex-shrink-0"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Back to Questions

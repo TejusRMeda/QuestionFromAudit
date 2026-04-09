@@ -6,7 +6,7 @@ const mockSignInWithOAuth = vi.fn().mockResolvedValue({ error: null });
 const mockSignInWithPassword = vi.fn().mockResolvedValue({ error: null });
 const mockSignInWithOtp = vi.fn().mockResolvedValue({ error: null });
 
-vi.mock("@/libs/supabase/client", () => ({
+vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     auth: {
       signInWithOAuth: mockSignInWithOAuth,

@@ -1,7 +1,7 @@
 "use client";
 
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import ComponentChangesDisplay from "@/components/questionnaire/ComponentChangesDisplay";
 import type { ComponentChanges } from "@/types/editPanel";
@@ -96,38 +96,14 @@ export default function SuggestionDetailModal({
   const statusConfig = statusOptions.find((s) => s.value === suggestion.status);
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-neutral/50" />
-        </Transition.Child>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-box bg-base-100 shadow-xl transition-all">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="w-full sm:max-w-2xl overflow-hidden rounded-box bg-base-100 shadow-xl p-0" showCloseButton={false}>
                 {/* Header */}
                 <div className="flex items-start justify-between p-6 border-b border-base-300">
                   <div>
-                    <Dialog.Title className="text-lg font-semibold">
+                    <DialogTitle className="text-lg font-semibold">
                       Suggestion Details
-                    </Dialog.Title>
+                    </DialogTitle>
                     <p className="text-sm text-base-content/60 mt-1">
                       Submitted {formatDateTime(suggestion.createdAt)}
                     </p>
@@ -137,6 +113,7 @@ export default function SuggestionDetailModal({
                     className="btn btn-ghost btn-sm btn-square"
                     onClick={onClose}
                     disabled={isSaving}
+                    aria-label="Close"
                   >
                     <svg
                       className="w-5 h-5"
@@ -334,11 +311,7 @@ export default function SuggestionDetailModal({
                     )}
                   </button>
                 </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,44 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { CreateSuggestionSchema } from "@/lib/validations/suggestion";
+import { applyRateLimit } from "@/lib/rateLimit";
 
 interface Params {
   params: Promise<{ trustLinkId: string }>;
-}
-
-/**
- * Component-level changes structure for structured suggestions
- */
-interface ComponentChanges {
-  settings?: {
-    required?: { from: boolean; to: boolean };
-  };
-  content?: {
-    questionText?: { from: string; to: string };
-    answerType?: { from: string; to: string };
-    options?: {
-      added: Array<{ text: string; characteristic: string }>;
-      modified: Array<{ index: number; from: string; to: string }>;
-      removed: number[];
-    };
-  };
-  help?: {
-    hasHelper?: { from: boolean; to: boolean };
-    helperName?: { from: string | null; to: string };
-    helperValue?: { from: string | null; to: string };
-    helperType?: { from: string | null; to: string };
-  };
-  logic?: {
-    description: string;
-  };
-}
-
-interface CreateSuggestionRequest {
-  instanceQuestionId: number;
-  submitterName: string;
-  submitterEmail?: string | null;
-  suggestionText: string;
-  reason: string;
-  componentChanges?: ComponentChanges; // NEW: structured component changes
 }
 
 export async function GET(req: NextRequest, { params }: Params) {
@@ -158,61 +124,17 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
+    const rateLimited = applyRateLimit(req, { limit: 30, windowMs: 60 * 60 * 1000, prefix: "suggestions-create" });
+    if (rateLimited) return rateLimited;
+
     const { trustLinkId } = await params;
-    const body: CreateSuggestionRequest = await req.json();
-    const { instanceQuestionId, submitterName, submitterEmail, suggestionText, reason, componentChanges } = body;
+    const body = await req.json();
 
-    // Validate required fields
-    if (!instanceQuestionId) {
-      return NextResponse.json(
-        { message: "Question ID is required" },
-        { status: 400 }
-      );
+    const parsed = CreateSuggestionSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
     }
-
-    if (!submitterName?.trim()) {
-      return NextResponse.json(
-        { message: "Name is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!suggestionText?.trim()) {
-      return NextResponse.json(
-        { message: "Suggestion is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!reason?.trim()) {
-      return NextResponse.json(
-        { message: "Reason is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate lengths
-    if (suggestionText.length > 2000) {
-      return NextResponse.json(
-        { message: "Suggestion exceeds maximum length of 2000 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (reason.length > 1000) {
-      return NextResponse.json(
-        { message: "Reason exceeds maximum length of 1000 characters" },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format if provided
-    if (submitterEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submitterEmail)) {
-      return NextResponse.json(
-        { message: "Invalid email format" },
-        { status: 400 }
-      );
-    }
+    const { instanceQuestionId, submitterName, submitterEmail, suggestionText, reason, componentChanges } = parsed.data;
 
     const supabase = createServiceClient();
 

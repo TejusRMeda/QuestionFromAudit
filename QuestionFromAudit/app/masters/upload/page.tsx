@@ -350,6 +350,10 @@ export default function MasterUploadPage() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
+              tabIndex={0}
+              role="button"
+              aria-label="Upload CSV file"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
               className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
                 isDragging
                   ? "border-primary bg-primary/5"

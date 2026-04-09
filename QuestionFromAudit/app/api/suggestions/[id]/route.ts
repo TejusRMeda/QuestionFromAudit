@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/libs/supabase/server";
-
-interface UpdateSuggestionRequest {
-  status?: "pending" | "approved" | "rejected";
-  internalComment?: string | null;
-  responseMessage?: string | null;
-}
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { UpdateSuggestionSchema } from "@/lib/validations/suggestion";
 
 export async function PUT(
   req: NextRequest,
@@ -34,16 +29,12 @@ export async function PUT(
       );
     }
 
-    const body: UpdateSuggestionRequest = await req.json();
-    const { status, internalComment, responseMessage } = body;
-
-    // Validate status if provided
-    if (status && !["pending", "approved", "rejected"].includes(status)) {
-      return NextResponse.json(
-        { message: "Invalid status. Must be pending, approved, or rejected" },
-        { status: 400 }
-      );
+    const body = await req.json();
+    const parsed = UpdateSuggestionSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
     }
+    const { status, internalComment, responseMessage } = parsed.data;
 
     // Verify the suggestion exists
     const { data: existingSuggestion, error: fetchError } = await supabase

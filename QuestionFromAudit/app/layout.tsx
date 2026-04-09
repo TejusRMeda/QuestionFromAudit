@@ -1,15 +1,13 @@
 import { ReactNode } from "react";
-import { Inter, Geist, Roboto_Slab } from "next/font/google";
+import { Geist, Roboto_Slab } from "next/font/google";
 import { Viewport } from "next";
-import { getSEOTags } from "@/libs/seo";
+import { getSEOTags } from "@/lib/seo";
 import ClientLayout from "@/components/LayoutClient";
 import config from "@/config";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const font = Inter({ subsets: ["latin"] });
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const robotoSlab = Roboto_Slab({ subsets: ["latin"], variable: "--font-roboto-slab" });
 
 export const viewport: Viewport = {
@@ -28,7 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 		<html
 			lang="en"
 			data-theme={config.colors.theme}
-			className={cn(font.className, "font-sans", geist.variable, robotoSlab.variable)}
+			className={cn(geist.className, "font-sans", geist.variable, robotoSlab.variable)}
 		>
 			<head>
 				<meta httpEquiv="Content-Language" content="en" />
@@ -37,8 +35,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 				)}
 			</head>
 			<body>
+				<a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded focus:shadow-lg">Skip to main content</a>
 				{/* ClientLayout contains all the client wrappers (Crisp chat support, toast messages, tooltips, etc.) */}
-				<ClientLayout>{children}</ClientLayout>
+				<ClientLayout><main id="main-content">{children}</main></ClientLayout>
 			</body>
 		</html>
 	);

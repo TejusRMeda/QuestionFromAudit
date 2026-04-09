@@ -1,7 +1,7 @@
 "use client";
 
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
 import toast from "react-hot-toast";
 
 interface Question {
@@ -118,48 +118,26 @@ export default function SuggestionModal({
   if (!question) return null;
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-neutral/50" />
-        </Transition.Child>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-box bg-base-100 p-6 shadow-xl transition-all">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <DialogContent className="w-full sm:max-w-lg overflow-hidden rounded-box bg-base-100 p-6 shadow-xl" showCloseButton={false}>
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <Dialog.Title className="text-lg font-semibold">
+                  <DialogTitle className="text-lg font-semibold">
                     Suggest a Change
-                  </Dialog.Title>
+                  </DialogTitle>
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm btn-square"
                     onClick={handleClose}
                     disabled={isSubmitting}
+                    aria-label="Close"
                   >
                     <svg
                       className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path
                         strokeLinecap="round"
@@ -190,12 +168,13 @@ export default function SuggestionModal({
                 <div className="space-y-4">
                   {/* Name */}
                   <div>
-                    <label className="label">
+                    <label className="label" htmlFor="suggestion-name">
                       <span className="label-text font-medium">
                         Your Name <span className="text-error">*</span>
                       </span>
                     </label>
                     <input
+                      id="suggestion-name"
                       type="text"
                       placeholder="Enter your name"
                       value={submitterName}
@@ -204,10 +183,12 @@ export default function SuggestionModal({
                         errors.submitterName ? "input-error" : ""
                       }`}
                       disabled={isSubmitting}
+                      aria-invalid={!!errors.submitterName}
+                      aria-describedby={errors.submitterName ? "suggestion-name-error" : undefined}
                     />
                     {errors.submitterName && (
                       <label className="label">
-                        <span className="label-text-alt text-error">
+                        <span id="suggestion-name-error" className="label-text-alt text-error">
                           {errors.submitterName}
                         </span>
                       </label>
@@ -216,12 +197,13 @@ export default function SuggestionModal({
 
                   {/* Email */}
                   <div>
-                    <label className="label">
+                    <label className="label" htmlFor="suggestion-email">
                       <span className="label-text font-medium">
                         Email <span className="text-base-content/50">(optional)</span>
                       </span>
                     </label>
                     <input
+                      id="suggestion-email"
                       type="email"
                       placeholder="Enter your email for updates"
                       value={submitterEmail}
@@ -230,10 +212,12 @@ export default function SuggestionModal({
                         errors.submitterEmail ? "input-error" : ""
                       }`}
                       disabled={isSubmitting}
+                      aria-invalid={!!errors.submitterEmail}
+                      aria-describedby={errors.submitterEmail ? "suggestion-email-error" : undefined}
                     />
                     {errors.submitterEmail && (
                       <label className="label">
-                        <span className="label-text-alt text-error">
+                        <span id="suggestion-email-error" className="label-text-alt text-error">
                           {errors.submitterEmail}
                         </span>
                       </label>
@@ -242,7 +226,7 @@ export default function SuggestionModal({
 
                   {/* Suggestion */}
                   <div>
-                    <label className="label">
+                    <label className="label" htmlFor="suggestion-text">
                       <span className="label-text font-medium">
                         Suggested Change <span className="text-error">*</span>
                       </span>
@@ -251,18 +235,22 @@ export default function SuggestionModal({
                       </span>
                     </label>
                     <textarea
+                      id="suggestion-text"
                       placeholder="Describe your suggested change..."
                       value={suggestionText}
                       onChange={(e) => setSuggestionText(e.target.value)}
                       rows={4}
+                      maxLength={MAX_SUGGESTION_LENGTH}
                       className={`textarea textarea-bordered w-full resize-none ${
                         errors.suggestionText ? "textarea-error" : ""
                       }`}
                       disabled={isSubmitting}
+                      aria-invalid={!!errors.suggestionText}
+                      aria-describedby={errors.suggestionText ? "suggestion-text-error" : undefined}
                     />
                     {errors.suggestionText && (
                       <label className="label">
-                        <span className="label-text-alt text-error">
+                        <span id="suggestion-text-error" className="label-text-alt text-error">
                           {errors.suggestionText}
                         </span>
                       </label>
@@ -271,7 +259,7 @@ export default function SuggestionModal({
 
                   {/* Reason */}
                   <div>
-                    <label className="label">
+                    <label className="label" htmlFor="suggestion-reason">
                       <span className="label-text font-medium">
                         Reason for Change <span className="text-error">*</span>
                       </span>
@@ -280,18 +268,22 @@ export default function SuggestionModal({
                       </span>
                     </label>
                     <textarea
+                      id="suggestion-reason"
                       placeholder="Explain why this change would be beneficial..."
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       rows={3}
+                      maxLength={MAX_REASON_LENGTH}
                       className={`textarea textarea-bordered w-full resize-none ${
                         errors.reason ? "textarea-error" : ""
                       }`}
                       disabled={isSubmitting}
+                      aria-invalid={!!errors.reason}
+                      aria-describedby={errors.reason ? "suggestion-reason-error" : undefined}
                     />
                     {errors.reason && (
                       <label className="label">
-                        <span className="label-text-alt text-error">
+                        <span id="suggestion-reason-error" className="label-text-alt text-error">
                           {errors.reason}
                         </span>
                       </label>
@@ -325,11 +317,7 @@ export default function SuggestionModal({
                     )}
                   </button>
                 </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+      </DialogContent>
+    </Dialog>
   );
 }

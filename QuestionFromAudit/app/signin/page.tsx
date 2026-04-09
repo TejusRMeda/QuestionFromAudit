@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/libs/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { Provider } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
 import config from "@/config";
@@ -33,7 +33,7 @@ export default function Login() {
       const { type, provider } = options;
       const redirectURL = window.location.origin + "/api/auth/callback";
 
-      if (type === "oauth") {
+      if (type === "oauth" && provider) {
         await supabase.auth.signInWithOAuth({
           provider,
           options: {
@@ -61,7 +61,8 @@ export default function Login() {
           toast.error(error.message);
         } else {
           toast.success("Signed in successfully!");
-          router.push("/dashboard");
+          // Full page reload ensures server reads the new auth cookies
+          window.location.href = "/dashboard";
         }
       }
     } catch (error) {

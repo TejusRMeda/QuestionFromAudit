@@ -17,7 +17,7 @@ export default function EnableWhenDisplay({
   }
 
   return (
-    <div className="text-sm text-slate-500 mb-3">
+    <div className="text-sm text-slate-500 mb-3" role="note" aria-label="Conditional display logic">
       <span className="font-medium">Shown when: </span>
       {conditions.map((condition, index) => (
         <span key={index}>
@@ -48,7 +48,7 @@ export default function EnableWhenDisplay({
             </span>
           )}
           {condition.logicalOp && (
-            <span className="mx-1 font-medium text-slate-400">
+            <span className="mx-1 font-medium text-slate-500">
               {logic === "OR" ? "or" : "and"}
             </span>
           )}

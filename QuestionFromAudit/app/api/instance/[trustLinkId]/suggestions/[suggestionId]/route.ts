@@ -1,41 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { UpdateSuggestionSchema } from "@/lib/validations/suggestion";
 
 interface Params {
   params: Promise<{ trustLinkId: string; suggestionId: string }>;
-}
-
-interface UpdateSuggestionRequest {
-  status?: "pending" | "approved" | "rejected";
-  responseMessage?: string | null;
 }
 
 // Update a suggestion (status, response message)
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const { trustLinkId, suggestionId } = await params;
-    const body: UpdateSuggestionRequest = await req.json();
-    const { status, responseMessage } = body;
+    const body = await req.json();
+
+    const parsed = UpdateSuggestionSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
+    }
+    const { status, responseMessage } = parsed.data;
 
     if (!suggestionId) {
       return NextResponse.json(
         { message: "Suggestion ID is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate status if provided
-    if (status && !["pending", "approved", "rejected"].includes(status)) {
-      return NextResponse.json(
-        { message: "Invalid status. Must be pending, approved, or rejected" },
-        { status: 400 }
-      );
-    }
-
-    // Validate response message length
-    if (responseMessage && responseMessage.length > 1000) {
-      return NextResponse.json(
-        { message: "Response message exceeds maximum length of 1000 characters" },
         { status: 400 }
       );
     }

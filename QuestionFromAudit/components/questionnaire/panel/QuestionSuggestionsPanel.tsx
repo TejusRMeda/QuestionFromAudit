@@ -174,12 +174,12 @@ export default function QuestionSuggestionsPanel({
       <div className="flex-1 overflow-auto p-4">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+            <Loader2 className="w-6 h-6 text-slate-500 animate-spin" />
           </div>
         ) : suggestions.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-400 text-sm mb-1">No suggestions yet</p>
-            <p className="text-slate-400 text-xs">Be the first to add one</p>
+            <p className="text-slate-500 text-sm mb-1">No suggestions yet</p>
+            <p className="text-slate-500 text-xs">Be the first to add one</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -201,7 +201,7 @@ export default function QuestionSuggestionsPanel({
                       <span className="font-medium text-sm text-slate-800">
                         {suggestion.submitterName}
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         {formatDate(suggestion.createdAt)}
                       </span>
                     </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState, useEffect, useRef } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import ConversationThread from "./ConversationThread";
 import CommentInput from "./CommentInput";
@@ -90,10 +90,35 @@ export default function SuggestionThreadModal({
   const threadContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen && suggestion) {
-      fetchComments();
+    if (!isOpen || !suggestion) return;
+
+    const controller = new AbortController();
+
+    async function fetchComments() {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `/api/instance/${trustLinkId}/suggestions/${suggestion!.id}/comments`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to load comments");
+        }
+        const data = await response.json();
+        setComments(data.comments || []);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Error fetching comments:", err);
+        toast.error("Failed to load comments");
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [isOpen, suggestion]);
+
+    fetchComments();
+
+    return () => controller.abort();
+  }, [isOpen, suggestion, trustLinkId]);
 
   useEffect(() => {
     // Scroll to bottom when comments change
@@ -101,27 +126,6 @@ export default function SuggestionThreadModal({
       threadContainerRef.current.scrollTop = threadContainerRef.current.scrollHeight;
     }
   }, [comments]);
-
-  const fetchComments = async () => {
-    if (!suggestion) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `/api/instance/${trustLinkId}/suggestions/${suggestion.id}/comments`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to load comments");
-      }
-      const data = await response.json();
-      setComments(data.comments || []);
-    } catch (err) {
-      console.error("Error fetching comments:", err);
-      toast.error("Failed to load comments");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmitComment = async (data: {
     authorName: string;
@@ -223,47 +227,25 @@ export default function SuggestionThreadModal({
   if (!suggestion) return null;
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-200"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-150"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/30" />
-        </Transition.Child>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-200"
-              enterFrom="opacity-0 translate-y-4"
-              enterTo="opacity-100 translate-y-0"
-              leave="ease-in duration-150"
-              leaveFrom="opacity-100 translate-y-0"
-              leaveTo="opacity-0 translate-y-4"
-            >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-base-100 shadow-2xl transition-all flex flex-col max-h-[85vh]">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="w-full sm:max-w-2xl overflow-hidden rounded-xl bg-base-100 shadow-2xl flex flex-col max-h-[85vh] p-0" showCloseButton={false}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-base-200">
-                  <Dialog.Title className="text-base font-semibold text-base-content">
+                  <DialogTitle className="text-base font-semibold text-base-content">
                     Suggestion Thread
-                  </Dialog.Title>
+                  </DialogTitle>
                   <button
                     type="button"
                     className="p-1.5 rounded-lg text-base-content/50 hover:text-base-content hover:bg-base-200 transition-colors"
                     onClick={onClose}
+                    aria-label="Close"
                   >
                     <svg
                       className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path
                         strokeLinecap="round"
@@ -372,11 +354,7 @@ export default function SuggestionThreadModal({
                     placeholder="Add a comment..."
                   />
                 </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+      </DialogContent>
+    </Dialog>
   );
 }

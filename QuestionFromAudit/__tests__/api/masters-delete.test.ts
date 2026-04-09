@@ -6,7 +6,7 @@ import {
 } from "../helpers/supabase-mock";
 
 const mockCreateClient = vi.fn();
-vi.mock("@/libs/supabase/server", () => ({
+vi.mock("@/lib/supabase/server", () => ({
   createClient: () => mockCreateClient(),
   createServiceClient: () => mockCreateClient(),
 }));

@@ -1,7 +1,7 @@
 "use client";
 
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { formatDate } from "@/lib/utils";
 
@@ -53,77 +53,61 @@ export default function ViewSuggestionsModal({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (isOpen && question) {
-      fetchSuggestions();
-    }
-  }, [isOpen, question]);
+    if (!isOpen || !question) return;
 
-  const fetchSuggestions = async () => {
-    if (!question) return;
+    const controller = new AbortController();
 
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/questions/${question.id}/suggestions`);
-      if (!response.ok) {
-        throw new Error("Failed to load suggestions");
+    async function fetchSuggestions() {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/questions/${question!.id}/suggestions`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error("Failed to load suggestions");
+        }
+        const data = await response.json();
+        setSuggestions(data.suggestions || []);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "Failed to load suggestions");
+        toast.error("Failed to load suggestions");
+      } finally {
+        setLoading(false);
       }
-      const data = await response.json();
-      setSuggestions(data.suggestions || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load suggestions");
-      toast.error("Failed to load suggestions");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    fetchSuggestions();
+
+    return () => controller.abort();
+  }, [isOpen, question, retryCount]);
 
   if (!question) return null;
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-neutral/50" />
-        </Transition.Child>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-box bg-base-100 p-6 shadow-xl transition-all">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="w-full sm:max-w-2xl overflow-hidden rounded-box bg-base-100 p-6 shadow-xl" showCloseButton={false}>
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <Dialog.Title className="text-lg font-semibold">
+                  <DialogTitle className="text-lg font-semibold">
                     Suggestions
-                  </Dialog.Title>
+                  </DialogTitle>
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm btn-square"
                     onClick={onClose}
+                    aria-label="Close"
                   >
                     <svg
                       className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path
                         strokeLinecap="round"
@@ -153,7 +137,7 @@ export default function ViewSuggestionsModal({
                 {/* Suggestions List */}
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {loading ? (
-                    <div className="flex items-center justify-center py-8">
+                    <div role="status" aria-live="polite" className="flex items-center justify-center py-8">
                       <span className="loading loading-spinner loading-md"></span>
                       <span className="ml-2 text-base-content/60">
                         Loading suggestions...
@@ -179,7 +163,7 @@ export default function ViewSuggestionsModal({
                       <p className="text-error">{error}</p>
                       <button
                         className="btn btn-ghost btn-sm mt-2"
-                        onClick={fetchSuggestions}
+                        onClick={() => setRetryCount((c) => c + 1)}
                       >
                         Try Again
                       </button>
@@ -285,11 +269,7 @@ export default function ViewSuggestionsModal({
                     Add Your Suggestion
                   </button>
                 </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+      </DialogContent>
+    </Dialog>
   );
 }

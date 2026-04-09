@@ -270,6 +270,49 @@ describe("MyPreOp CSV Validation", () => {
       expect(result!.conditions[0].operator).toBe("<");
       expect(result!.conditions[0].value).toBe("16");
     });
+
+    it("should parse <= and >= operators correctly (not as < or >)", () => {
+      const lte = parseEnableWhen("(patient_age<=18)");
+      expect(lte).not.toBeNull();
+      expect(lte!.conditions[0].operator).toBe("<=");
+      expect(lte!.conditions[0].value).toBe("18");
+
+      const gte = parseEnableWhen("(patient_age>=65)");
+      expect(gte).not.toBeNull();
+      expect(gte!.conditions[0].operator).toBe(">=");
+      expect(gte!.conditions[0].value).toBe("65");
+    });
+
+    it("should parse != operator correctly", () => {
+      const result = parseEnableWhen("(patient_gender!=unknown)");
+      expect(result).not.toBeNull();
+      expect(result!.conditions[0].operator).toBe("!=");
+      expect(result!.conditions[0].value).toBe("unknown");
+    });
+
+    it("should not match 'exists' inside characteristic names", () => {
+      const result = parseEnableWhen("(patient_exists_flag=true)");
+      expect(result).not.toBeNull();
+      expect(result!.conditions[0].characteristic).toBe("patient_exists_flag");
+      expect(result!.conditions[0].operator).toBe("=");
+      expect(result!.conditions[0].value).toBe("true");
+    });
+
+    it("should parse concatenated AND without spaces", () => {
+      const result = parseEnableWhen("(age<16)AND(name=true)");
+      expect(result).not.toBeNull();
+      expect(result!.logic).toBe("AND");
+      expect(result!.conditions).toHaveLength(2);
+      expect(result!.conditions[0].characteristic).toBe("age");
+      expect(result!.conditions[1].characteristic).toBe("name");
+    });
+
+    it("should parse exists operator with null value", () => {
+      const result = parseEnableWhen("(patient_age exists null)");
+      expect(result).not.toBeNull();
+      expect(result!.conditions[0].operator).toBe("exists");
+      expect(result!.conditions[0].value).toBe("null");
+    });
   });
 
   describe("question validation", () => {

@@ -200,6 +200,7 @@ export default function HelpTab({
                 <Switch
                   checked={suggestedHasHelper}
                   onCheckedChange={handleHelperToggle}
+                  aria-label="Toggle helper"
                 />
               </div>
             </div>
@@ -222,12 +223,13 @@ export default function HelpTab({
               {/* Helper Type */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <Label className="text-xs">Helper Type</Label>
+                  <Label htmlFor="suggested-helper-type" className="text-xs">Helper Type</Label>
                   {changes?.helperType && (
                     <span className="text-[#4A90A4] text-xs">Modified</span>
                   )}
                 </div>
                 <select
+                  id="suggested-helper-type"
                   value={suggestedHelperType || ""}
                   onChange={(e) => handleHelperTypeChange(e.target.value)}
                   className={`flex h-8 w-full rounded-lg border bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${

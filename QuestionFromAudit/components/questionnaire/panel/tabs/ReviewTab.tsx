@@ -253,7 +253,7 @@ export default function ReviewTab({
           {/* Email */}
           <div>
             <Label className="mb-1.5">
-              Email <span className="text-slate-400">(optional)</span>
+              Email <span className="text-slate-500">(optional)</span>
             </Label>
             <Input
               type="email"
@@ -270,7 +270,7 @@ export default function ReviewTab({
               <Label>
                 Notes & Comments <span className="text-red-600">*</span>
               </Label>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 {notesLength}/{VALIDATION_LIMITS.MAX_NOTES_LENGTH}
               </span>
             </div>
@@ -280,6 +280,7 @@ export default function ReviewTab({
               placeholder="Explain why these changes would improve the questionnaire..."
               className={validationErrors.notes ? "border-red-300" : ""}
               rows={4}
+              maxLength={VALIDATION_LIMITS.MAX_NOTES_LENGTH}
               disabled={isSubmitting}
             />
             {notesLength < VALIDATION_LIMITS.MIN_NOTES_LENGTH && (

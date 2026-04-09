@@ -71,7 +71,9 @@ export default function CommentInput({
     <div className="space-y-3">
       <div className="flex gap-2">
         <div className="flex-1">
+          <label htmlFor="comment-author-name" className="sr-only">Your name</label>
           <input
+            id="comment-author-name"
             type="text"
             placeholder="Your name *"
             value={authorName}
@@ -80,13 +82,17 @@ export default function CommentInput({
               errors.authorName ? "border-error" : "border-base-300"
             }`}
             disabled={isSubmitting}
+            aria-invalid={!!errors.authorName}
+            aria-describedby={errors.authorName ? "comment-author-name-error" : undefined}
           />
           {errors.authorName && (
-            <p className="text-xs text-error mt-1">{errors.authorName}</p>
+            <p id="comment-author-name-error" className="text-xs text-error mt-1">{errors.authorName}</p>
           )}
         </div>
         <div className="flex-1">
+          <label htmlFor="comment-author-email" className="sr-only">Email</label>
           <input
+            id="comment-author-email"
             type="email"
             placeholder="Email (optional)"
             value={authorEmail}
@@ -95,27 +101,34 @@ export default function CommentInput({
               errors.authorEmail ? "border-error" : "border-base-300"
             }`}
             disabled={isSubmitting}
+            aria-invalid={!!errors.authorEmail}
+            aria-describedby={errors.authorEmail ? "comment-author-email-error" : undefined}
           />
           {errors.authorEmail && (
-            <p className="text-xs text-error mt-1">{errors.authorEmail}</p>
+            <p id="comment-author-email-error" className="text-xs text-error mt-1">{errors.authorEmail}</p>
           )}
         </div>
       </div>
 
       <div>
+        <label htmlFor="comment-message" className="sr-only">Comment</label>
         <textarea
+          id="comment-message"
           placeholder={placeholder}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={3}
+          maxLength={MAX_MESSAGE_LENGTH}
           className={`w-full px-3 py-2 text-sm bg-base-100 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${
             errors.message ? "border-error" : "border-base-300"
           }`}
           disabled={isSubmitting}
+          aria-invalid={!!errors.message}
+          aria-describedby={errors.message ? "comment-message-error" : undefined}
         />
         {errors.message && (
-          <p className="text-xs text-error mt-1">{errors.message}</p>
+          <p id="comment-message-error" className="text-xs text-error mt-1">{errors.message}</p>
         )}
       </div>
 

@@ -298,7 +298,7 @@ export default function CasodReportView({
               }`}
             >
               {status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1)}{" "}
-              <span className={statusFilter === status ? "text-white/80" : "text-slate-400"}>
+              <span className={statusFilter === status ? "text-white/80" : "text-slate-500"}>
                 {counts[status]}
               </span>
             </button>
@@ -335,7 +335,7 @@ export default function CasodReportView({
         {/* Search */}
         {rows.length > 0 && (
           <div className="relative max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -431,19 +431,19 @@ export default function CasodReportView({
                       </td>
                       <td className="px-3 py-3 align-top">
                         <div>
-                          <span className="text-[10px] font-mono text-slate-400">{row.questionId}</span>
+                          <span className="text-[10px] font-mono text-slate-500">{row.questionId}</span>
                           <p className={`text-sm text-slate-700 mt-0.5 ${isExpanded ? "" : "line-clamp-2"}`}>
                             {row.questionText}
                           </p>
                           {isExpanded && row.suggestionCount > 1 && (
-                            <span className="text-[10px] text-slate-400 mt-1 block">
+                            <span className="text-[10px] text-slate-500 mt-1 block">
                               {row.suggestionCount} suggestions consolidated
                             </span>
                           )}
                         </div>
                       </td>
                       <td className="px-3 py-3 align-top">
-                        <span className={`text-xs font-medium ${row.required === "TRUE" ? "text-amber-600" : "text-slate-400"}`}>
+                        <span className={`text-xs font-medium ${row.required === "TRUE" ? "text-amber-600" : "text-slate-500"}`}>
                           {row.required}
                         </span>
                       </td>
@@ -524,7 +524,7 @@ export default function CasodReportView({
       ) : (
         <div className="text-center py-16">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>

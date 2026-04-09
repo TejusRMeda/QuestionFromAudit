@@ -177,7 +177,7 @@ export default function LogicTab({
 
               {/* Arrow down */}
               <svg
-                className="w-6 h-6 text-slate-400"
+                className="w-6 h-6 text-slate-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -207,7 +207,7 @@ export default function LogicTab({
             <>
               {/* Arrow down */}
               <svg
-                className="w-6 h-6 text-slate-400"
+                className="w-6 h-6 text-slate-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

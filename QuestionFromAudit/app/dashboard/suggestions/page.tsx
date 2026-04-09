@@ -1,4 +1,4 @@
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import SuggestionsPageClient, { TrustSuggestionGroup } from "@/components/dashboard/SuggestionsPageClient";
 
 export const dynamic = "force-dynamic";
@@ -32,12 +32,13 @@ type MasterRaw = {
 
 export default async function SuggestionsPage() {
   const supabase = await createClient();
+  const serviceClient = createServiceClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: mastersRaw } = await supabase
+  const { data: mastersRaw } = await serviceClient
     .from("master_questionnaires")
     .select(
       `

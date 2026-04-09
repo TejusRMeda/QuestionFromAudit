@@ -1,4 +1,4 @@
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import TrustsPageClient from "@/components/dashboard/TrustsPageClient";
 
 export const dynamic = "force-dynamic";
@@ -19,13 +19,14 @@ type MasterWithTrusts = {
 
 export default async function TrustsPage() {
   const supabase = await createClient();
+  const serviceClient = createServiceClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const [{ data: mastersRaw }, { data: mastersForModal }] = await Promise.all([
-    supabase
+    serviceClient
       .from("master_questionnaires")
       .select(
         `
@@ -37,7 +38,7 @@ export default async function TrustsPage() {
       )
       .eq("user_id", user!.id)
       .order("created_at", { ascending: false }),
-    supabase
+    serviceClient
       .from("master_questionnaires")
       .select("id, name, admin_link_id")
       .eq("user_id", user!.id)

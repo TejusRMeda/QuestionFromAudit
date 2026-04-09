@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Dialog, Transition } from "@headlessui/react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import toast from "react-hot-toast";
 import SuggestionThreadModal from "@/components/questionnaire/SuggestionThreadModal";
 import ComponentChangesDisplay from "@/components/questionnaire/ComponentChangesDisplay";
@@ -587,37 +587,13 @@ export default function InstanceSuggestionsPage() {
       </div>
 
       {/* Action Modal */}
-      <Transition appear show={actionModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={closeActionModal}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black/25" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-base-100 p-6 shadow-xl transition-all">
+      <Dialog open={actionModalOpen} onOpenChange={(open) => { if (!open) closeActionModal(); }}>
+        <DialogContent className="w-full sm:max-w-md overflow-hidden rounded-2xl bg-base-100 p-6 shadow-xl" showCloseButton={false}>
                   {actionType === "delete" ? (
                     <>
-                      <Dialog.Title as="h3" className="text-lg font-semibold text-error">
+                      <DialogTitle className="text-lg font-semibold text-error">
                         Delete Suggestion
-                      </Dialog.Title>
+                      </DialogTitle>
                       <p className="mt-2 text-sm text-base-content/70">
                         Are you sure you want to delete this suggestion? This action cannot be undone.
                       </p>
@@ -643,9 +619,9 @@ export default function InstanceSuggestionsPage() {
                     </>
                   ) : actionType === "change-status" ? (
                     <>
-                      <Dialog.Title as="h3" className="text-lg font-semibold">
+                      <DialogTitle className="text-lg font-semibold">
                         Change Status
-                      </Dialog.Title>
+                      </DialogTitle>
 
                       <div className="mt-4">
                         <label className="label">
@@ -714,9 +690,9 @@ export default function InstanceSuggestionsPage() {
                     </>
                   ) : (
                     <>
-                      <Dialog.Title as="h3" className="text-lg font-semibold">
+                      <DialogTitle className="text-lg font-semibold">
                         {actionType === "approve" ? "Approve" : "Reject"} Suggestion
-                      </Dialog.Title>
+                      </DialogTitle>
 
                       <div className="mt-4">
                         <label className="label">
@@ -757,12 +733,8 @@ export default function InstanceSuggestionsPage() {
                       </div>
                     </>
                   )}
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
+        </DialogContent>
+      </Dialog>
 
       {/* Thread Modal */}
       <SuggestionThreadModal

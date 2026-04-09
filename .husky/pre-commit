@@ -1,0 +1,1 @@
+cd QuestionFromAudit && npx lint-staged

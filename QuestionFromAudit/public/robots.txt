@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://shipfa.st
+Host: https://questionaireaudit.com
 
 # Sitemaps
-Sitemap: https://shipfa.st/sitemap.xml
+Sitemap: https://questionaireaudit.com/sitemap.xml

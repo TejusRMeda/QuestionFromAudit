@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 
 interface Params {
   params: Promise<{ trustLinkId: string }>;
@@ -32,17 +32,26 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Fetch instance questions with suggestion counts in a single query
-    const { data: questions, error: questionsError } = await supabase
-      .from("instance_questions")
-      .select(`
-        id, question_id, category, question_text, answer_type, answer_options,
-        characteristic, section, page, enable_when, has_helper, helper_type,
-        helper_name, helper_value,
-        instance_suggestions (count)
-      `)
-      .eq("instance_id", instance.id)
-      .order("id", { ascending: true });
+    // Fetch questions and section reviews in parallel (both only need instance.id)
+    const [questionsResult, sectionReviewsResult] = await Promise.all([
+      supabase
+        .from("instance_questions")
+        .select(`
+          id, question_id, category, question_text, answer_type, answer_options,
+          characteristic, section, page, enable_when, has_helper, helper_type,
+          helper_name, helper_value,
+          instance_suggestions (count)
+        `)
+        .eq("instance_id", instance.id)
+        .order("id", { ascending: true }),
+      supabase
+        .from("instance_section_reviews")
+        .select("section_name, reviewer_name, has_suggestions")
+        .eq("instance_id", instance.id),
+    ]);
+
+    const { data: questions, error: questionsError } = questionsResult;
+    const { data: sectionReviews } = sectionReviewsResult;
 
     if (questionsError) {
       console.error("Error fetching questions:", questionsError);
@@ -52,18 +61,29 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Fetch quick action suggestions (required/delete) to show persistent banners
-    const { data: quickActionSuggestions } = await supabase
-      .from("instance_suggestions")
-      .select("instance_question_id, suggestion_text")
-      .in("suggestion_text", [
-        "Make this question required",
-        "Remove this question from the questionnaire",
-      ])
-      .in(
-        "instance_question_id",
-        questions?.map((q) => q.id) || []
-      );
+    // Fetch quick actions and new-question suggestions in parallel (both need question IDs)
+    const questionIds = questions?.map((q) => q.id) || [];
+
+    const [quickActionsResult, newQuestionsResult] = await Promise.all([
+      supabase
+        .from("instance_suggestions")
+        .select("instance_question_id, suggestion_text")
+        .in("suggestion_text", [
+          "Make this question required",
+          "Remove this question from the questionnaire",
+        ])
+        .in("instance_question_id", questionIds),
+      questionIds.length > 0
+        ? supabase
+            .from("instance_suggestions")
+            .select("id, instance_question_id, submitter_name, component_changes")
+            .not("component_changes->newQuestion", "is", null)
+            .in("instance_question_id", questionIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const { data: quickActionSuggestions } = quickActionsResult;
+    const { data: newQuestionRows } = newQuestionsResult;
 
     // Build a map of question ID → quick action type
     const quickActionMap: Record<number, "required" | "delete"> = {};
@@ -77,16 +97,6 @@ export async function GET(req: NextRequest, { params }: Params) {
       }
     }
 
-    // Fetch new-question suggestions (component_changes has newQuestion key)
-    const questionIds = questions?.map((q) => q.id) || [];
-    const { data: newQuestionRows }: { data: any[] | null } = questionIds.length > 0
-      ? await supabase
-          .from("instance_suggestions")
-          .select("id, instance_question_id, submitter_name, component_changes")
-          .not("component_changes->newQuestion", "is", null)
-          .in("instance_question_id", questionIds)
-      : { data: [] };
-
     const newQuestionSuggestions = (newQuestionRows || []).map((s: any) => ({
       id: s.id,
       anchorQuestionId: s.instance_question_id,
@@ -94,12 +104,6 @@ export async function GET(req: NextRequest, { params }: Params) {
       questionText: s.component_changes?.newQuestion?.questionText || "",
       submitterName: s.submitter_name,
     }));
-
-    // Fetch section reviews
-    const { data: sectionReviews } = await supabase
-      .from("instance_section_reviews")
-      .select("section_name, reviewer_name, has_suggestions")
-      .eq("instance_id", instance.id);
 
     // Format response
     const formattedQuestions = questions?.map((q) => ({

@@ -1,20 +1,6 @@
 "use client";
 
-import {
-  SettingsChanges,
-  ContentChanges,
-  HelpChanges,
-  LogicChanges,
-  NewQuestionData,
-} from "@/types/editPanel";
-
-interface ComponentChanges {
-  settings?: SettingsChanges;
-  content?: ContentChanges;
-  help?: HelpChanges;
-  logic?: LogicChanges;
-  newQuestion?: NewQuestionData;
-}
+import type { ComponentChanges } from "@/types/editPanel";
 
 interface ComponentChangesDisplayProps {
   componentChanges: ComponentChanges | null;

@@ -57,7 +57,7 @@ export default function HelperDisplay({
               className="text-sm text-[#4A90A4] hover:underline inline-flex items-center gap-1"
             >
               {helperValue}
-              <span className="text-slate-400 text-xs">(opens in new tab)</span>
+              <span className="text-slate-500 text-xs">(opens in new tab)</span>
               <svg
                 className="w-3.5 h-3.5"
                 fill="none"

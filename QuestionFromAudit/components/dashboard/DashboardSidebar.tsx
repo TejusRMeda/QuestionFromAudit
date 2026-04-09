@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/libs/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import {
   Tooltip,
   TooltipContent,
@@ -100,7 +100,7 @@ export default function DashboardSidebar({ userEmail, userName, userAvatar }: Da
                         className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                           active
                             ? "bg-slate-700 text-white"
-                            : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                            : "text-slate-500 hover:bg-slate-800 hover:text-white"
                         }`}
                       >
                         {item.icon}
@@ -117,7 +117,7 @@ export default function DashboardSidebar({ userEmail, userName, userAvatar }: Da
               <TooltipTrigger asChild>
                 <button
                   onClick={handleSignOut}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-red-400 transition-colors"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-800 hover:text-red-400 transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -151,7 +151,7 @@ export default function DashboardSidebar({ userEmail, userName, userAvatar }: Da
         {/* Right nav panel */}
         <div className="w-52 bg-white border-r border-slate-100 flex flex-col py-4">
           {/* Workspace label */}
-          <p className="px-4 mb-3 text-xs font-semibold text-slate-400 uppercase tracking-widest">
+          <p className="px-4 mb-3 text-xs font-semibold text-slate-500 uppercase tracking-widest">
             Workspace
           </p>
 
@@ -169,7 +169,7 @@ export default function DashboardSidebar({ userEmail, userName, userAvatar }: Da
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <span className={active ? "text-blue-600" : "text-slate-400"}>
+                  <span className={active ? "text-blue-600" : "text-slate-500"}>
                     {item.icon}
                   </span>
                   {item.label}
@@ -198,7 +198,7 @@ export default function DashboardSidebar({ userEmail, userName, userAvatar }: Da
               )}
               <div className="min-w-0">
                 <p className="text-sm font-medium text-slate-800 truncate">{displayName}</p>
-                <p className="text-xs text-slate-400 truncate">{userEmail}</p>
+                <p className="text-xs text-slate-500 truncate">{userEmail}</p>
               </div>
             </div>
             <button
@@ -223,7 +223,7 @@ export default function DashboardSidebar({ userEmail, userName, userAvatar }: Da
               key={item.href}
               href={item.href}
               className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs transition-colors ${
-                active ? "text-blue-600 font-semibold" : "text-slate-400"
+                active ? "text-blue-600 font-semibold" : "text-slate-500"
               }`}
             >
               {item.icon}

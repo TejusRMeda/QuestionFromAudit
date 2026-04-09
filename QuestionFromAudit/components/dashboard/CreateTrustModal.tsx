@@ -1,7 +1,7 @@
 "use client";
 
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState, useEffect, useRef, KeyboardEvent } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Fragment, useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
 
 interface Questionnaire {
   id: number;
@@ -60,6 +60,11 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
     }
   }, [isOpen, isAddFormsMode, initialTrustName]);
 
+  const handleDone = useCallback(() => {
+    onCreated();
+    onClose();
+  }, [onCreated, onClose]);
+
   // Auto-close countdown on step 5
   useEffect(() => {
     if (step !== 5) return;
@@ -75,13 +80,7 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
       });
     }, 1000);
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
-
-  function handleDone() {
-    onCreated();
-    onClose();
-  }
+  }, [step, handleDone]);
 
   function addMember() {
     const email = memberInput.trim();
@@ -180,53 +179,21 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
   const selectedQuestionnaires = questionnaires.filter((q) => selectedIds.includes(q.admin_link_id));
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog
-        as="div"
-        className="relative z-50"
-        onClose={() => {
-          if (!isCreating) onClose();
-        }}
-        initialFocus={nameInputRef}
-      >
-        {/* Backdrop */}
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-200"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-150"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-slate-900/40" />
-        </Transition.Child>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-200"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-150"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isCreating) onClose(); }}>
+      <DialogContent className="w-full sm:max-w-md bg-white rounded-2xl shadow-xl overflow-hidden p-0" showCloseButton={false}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
-                  <Dialog.Title className="text-base font-semibold text-slate-800">
+                  <DialogTitle className="text-base font-semibold text-slate-800">
                     {isAddFormsMode ? `Add Forms to ${initialTrustName}` : "Create New Trust"}
-                  </Dialog.Title>
+                  </DialogTitle>
                   {!isCreating && (
                     <button
                       type="button"
                       onClick={onClose}
-                      className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-100"
+                      className="text-slate-500 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-100"
                       aria-label="Close"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -252,7 +219,7 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
                                   : "bg-slate-100 border border-slate-200"
                               }`}
                             />
-                            <span className="text-[10px] text-slate-400 mt-1 w-10 text-center">{label}</span>
+                            <span className="text-[10px] text-slate-500 mt-1 w-10 text-center">{label}</span>
                           </div>
                           {i < STEP_LABELS.length - 1 && (
                             <div
@@ -343,7 +310,7 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
                         <button
                           type="button"
                           onClick={handleNext}
-                          className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
+                          className="text-sm text-slate-500 hover:text-slate-600 transition-colors"
                         >
                           Skip
                         </button>
@@ -353,7 +320,7 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
                           type="button"
                           onClick={handleNext}
                           disabled={!canAdvance()}
-                          className="bg-[#4A90A4] hover:bg-[#3d7a8c] disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                          className="bg-[#4A90A4] hover:bg-[#3d7a8c] disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                         >
                           Next
                         </button>
@@ -369,16 +336,12 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
                       onClick={handleDone}
                       className="bg-[#4A90A4] hover:bg-[#3d7a8c] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
                     >
-                      Done ({countdown})
+                      Done (<span aria-live="polite">{countdown}</span>)
                     </button>
                   </div>
                 )}
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -398,7 +361,7 @@ function Step1({
   return (
     <div>
       <h2 className="text-sm font-semibold text-slate-800 mb-1">What&apos;s the name of this trust?</h2>
-      <p className="text-xs text-slate-400 mb-4">e.g. NHS Foundation Trust, Barts Health</p>
+      <p className="text-xs text-slate-500 mb-4">e.g. NHS Foundation Trust, Barts Health</p>
       <input
         ref={inputRef}
         type="text"
@@ -430,7 +393,7 @@ function Step2({
   return (
     <div>
       <h2 className="text-sm font-semibold text-slate-800 mb-1">Who are the internal members?</h2>
-      <p className="text-xs text-slate-400 mb-4">Their email addresses will be shown when you share the link.</p>
+      <p className="text-xs text-slate-500 mb-4">Their email addresses will be shown when you share the link.</p>
 
       {members.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -440,7 +403,7 @@ function Step2({
               <button
                 type="button"
                 onClick={() => onRemove(email)}
-                className="text-slate-400 hover:text-slate-600 ml-0.5"
+                className="text-slate-500 hover:text-slate-600 ml-0.5 min-w-6 min-h-6 flex items-center justify-center"
                 aria-label={`Remove ${email}`}
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -499,7 +462,7 @@ function Step3({
   return (
     <div>
       <h2 className="text-sm font-semibold text-slate-800 mb-1">Which questionnaires to share?</h2>
-      <p className="text-xs text-slate-400 mb-4">Select one or more questionnaires to share with this trust.</p>
+      <p className="text-xs text-slate-500 mb-4">Select one or more questionnaires to share with this trust.</p>
 
       {selectedQuestionnaires.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -509,7 +472,7 @@ function Step3({
               <button
                 type="button"
                 onClick={() => onToggle(q.admin_link_id)}
-                className="text-slate-400 hover:text-slate-600 ml-0.5"
+                className="text-slate-500 hover:text-slate-600 ml-0.5"
                 aria-label={`Deselect ${q.name}`}
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -529,6 +492,7 @@ function Step3({
               key={q.admin_link_id}
               type="button"
               onClick={() => onToggle(q.admin_link_id)}
+              aria-pressed={isSelected}
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
                 i > 0 ? "border-t border-slate-100" : ""
               } ${isSelected ? "bg-[#4A90A4]/5" : "hover:bg-slate-50"}`}
@@ -574,15 +538,15 @@ function Step4({
 
       <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-5">
         <div>
-          <p className="text-xs text-slate-400 mb-0.5">Trust name</p>
+          <p className="text-xs text-slate-500 mb-0.5">Trust name</p>
           <p className="text-sm font-medium text-slate-800">{trustName}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-400 mb-0.5">Members</p>
+          <p className="text-xs text-slate-500 mb-0.5">Members</p>
           <p className="text-sm text-slate-700">{members.length > 0 ? members.join(", ") : "None"}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-400 mb-1">Questionnaires</p>
+          <p className="text-xs text-slate-500 mb-1">Questionnaires</p>
           <ul className="space-y-0.5">
             {selectedQuestionnaires.map((q) => (
               <li key={q.admin_link_id} className="text-sm text-slate-700 flex items-center gap-1.5">
@@ -598,7 +562,7 @@ function Step4({
         type="button"
         onClick={onCreate}
         disabled={isCreating}
-        className="w-full bg-[#4A90A4] hover:bg-[#3d7a8c] disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+        className="w-full bg-[#4A90A4] hover:bg-[#3d7a8c] disabled:bg-slate-200 disabled:text-slate-500 text-white text-sm font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
       >
         {isCreating ? (
           <>

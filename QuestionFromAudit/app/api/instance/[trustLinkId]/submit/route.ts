@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { applyRateLimit } from "@/lib/rateLimit";
 
 interface Params {
   params: Promise<{ trustLinkId: string }>;
@@ -7,6 +8,9 @@ interface Params {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
+    const rateLimited = applyRateLimit(req, { limit: 5, windowMs: 60 * 60 * 1000, prefix: "submit" });
+    if (rateLimited) return rateLimited;
+
     const { trustLinkId } = await params;
     const supabase = createServiceClient();
 

@@ -169,25 +169,27 @@ export function parseEnableWhen(enableWhenStr: string): EnableWhen | null {
 
   const str = enableWhenStr.trim();
 
-  // Determine logic type (AND or OR)
-  const hasAnd = str.includes(" AND") || str.includes(")AND");
-  const hasOr = str.includes(" OR") || str.includes(")OR");
-  const logic: "AND" | "OR" = hasOr ? "OR" : "AND";
+  // Determine logic type — look for AND/OR as a whole word or adjacent to parentheses
+  const logicMatch = str.match(/\)\s*(AND|OR)\s*\(|\s+(AND|OR)\s+|\s+(AND|OR)\(|\)(AND|OR)\s+/);
+  const logic: "AND" | "OR" = logicMatch
+    ? ((logicMatch[1] || logicMatch[2] || logicMatch[3] || logicMatch[4]) === "OR" ? "OR" : "AND")
+    : "AND";
 
-  // Split by AND or OR, handling space-separated, concatenated, and mixed forms
-  // e.g. "(a=true) AND(b=true)", "(a=true)AND(b=true)", "(a=true) AND (b=true)"
-  const parts = str.split(/\s*\)?\s*(?:AND|OR)\s*\(?\s*/);
+  // Split by AND or OR, handling all spacing/parenthesis combinations:
+  // "(a=true) AND (b=true)", "(a=true)AND(b=true)", "(a=true) AND(b=true)"
+  const parts = str.split(/\s*\)?\s*\b(?:AND|OR)\b\s*\(?\s*/);
 
   const conditions: EnableWhenCondition[] = [];
 
   for (const part of parts) {
-    // Clean up the part - remove parentheses
+    // Clean up the part - remove outer parentheses
     const cleaned = part.replace(/^\(|\)$/g, "").trim();
     if (!cleaned) continue;
 
     // Parse condition: characteristic operator value
-    // Patterns: "characteristic=value", "characteristic<value", "characteristicexistsvalue"
-    let match = cleaned.match(/^([^=<>!]+)(=|<|>|<=|>=|!=|exists)(.*)$/);
+    // Multi-char operators (<=, >=, !=) must be tried before single-char (=, <, >).
+    // "exists" is a word operator — use word boundary to avoid matching inside names like "patient_exists_flag".
+    const match = cleaned.match(/^(.+?)(<=|>=|!=|=|<|>|\bexists\b)(.*)$/);
 
     if (match) {
       conditions.push({

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import Papa from "papaparse";
 import { CASOD_COLUMNS } from "@/types/casodExport";
 import {

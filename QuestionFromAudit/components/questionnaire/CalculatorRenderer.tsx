@@ -96,7 +96,7 @@ export default function CalculatorRenderer({
       {/* Conversion note */}
       {config.conversionNote && (
         <p
-          className={`text-slate-400 ${isPatient ? "text-sm mt-3" : "text-xs mt-2"}`}
+          className={`text-slate-500 ${isPatient ? "text-sm mt-3" : "text-xs mt-2"}`}
         >
           {config.conversionNote}
         </p>
@@ -104,7 +104,7 @@ export default function CalculatorRenderer({
 
       {/* Formula */}
       <p
-        className={`text-slate-400 italic ${isPatient ? "text-sm" : "text-xs"}`}
+        className={`text-slate-500 italic ${isPatient ? "text-sm" : "text-xs"}`}
       >
         {config.formulaDescription}
       </p>

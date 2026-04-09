@@ -35,7 +35,7 @@ function timeAgo(dateStr: string): string {
 export default function LatestSuggestionsFeed({ suggestions }: LatestSuggestionsFeedProps) {
   if (suggestions.length === 0) {
     return (
-      <div className="py-10 text-center text-slate-400">
+      <div className="py-10 text-center text-slate-500">
         <svg
           className="w-12 h-12 mx-auto mb-3 text-slate-200"
           fill="none"
@@ -69,15 +69,15 @@ export default function LatestSuggestionsFeed({ suggestions }: LatestSuggestions
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                   <span className="text-xs font-medium text-slate-700">{s.submitter_name}</span>
-                  <span className="text-xs text-slate-400">·</span>
-                  <span className="text-xs text-slate-400">{s.trustName}</span>
+                  <span className="text-xs text-slate-500">·</span>
+                  <span className="text-xs text-slate-500">{s.trustName}</span>
                 </div>
                 <p className="text-sm text-slate-600 truncate">{s.suggestion_text}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{s.masterName}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{s.masterName}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs text-slate-400 whitespace-nowrap">
+              <span className="text-xs text-slate-500 whitespace-nowrap">
                 {timeAgo(s.created_at)}
               </span>
               <Link

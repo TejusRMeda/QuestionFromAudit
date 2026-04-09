@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { CreateCommentSchema } from "@/lib/validations/comment";
+import { applyRateLimit } from "@/lib/rateLimit";
 
 interface Params {
   params: Promise<{ trustLinkId: string; suggestionId: string }>;
-}
-
-interface CreateCommentRequest {
-  authorType: "admin" | "trust_user";
-  authorName: string;
-  authorEmail?: string | null;
-  message: string;
 }
 
 // Get all comments for a suggestion
@@ -27,12 +22,34 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const supabase = createServiceClient();
 
-    // Verify the trust instance exists
-    const { data: instance, error: instanceError } = await supabase
-      .from("trust_instances")
-      .select("id")
-      .eq("trust_link_id", trustLinkId)
-      .single();
+    // Fetch instance, suggestion, and comments in parallel
+    const [instanceResult, suggestionResult, commentsResult] = await Promise.all([
+      supabase
+        .from("trust_instances")
+        .select("id")
+        .eq("trust_link_id", trustLinkId)
+        .single(),
+      supabase
+        .from("instance_suggestions")
+        .select(`
+          id,
+          instance_question_id,
+          instance_questions!inner (
+            instance_id
+          )
+        `)
+        .eq("id", suggestionIdNum)
+        .single(),
+      supabase
+        .from("suggestion_comments")
+        .select("id, author_type, author_name, author_email, message, created_at")
+        .eq("suggestion_id", suggestionIdNum)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    const { data: instance, error: instanceError } = instanceResult;
+    const { data: suggestion, error: suggestionError } = suggestionResult;
+    const { data: comments, error: commentsError } = commentsResult;
 
     if (instanceError || !instance) {
       return NextResponse.json(
@@ -40,19 +57,6 @@ export async function GET(req: NextRequest, { params }: Params) {
         { status: 404 }
       );
     }
-
-    // Verify the suggestion exists and belongs to this instance
-    const { data: suggestion, error: suggestionError } = await supabase
-      .from("instance_suggestions")
-      .select(`
-        id,
-        instance_question_id,
-        instance_questions!inner (
-          instance_id
-        )
-      `)
-      .eq("id", suggestionIdNum)
-      .single();
 
     if (suggestionError || !suggestion) {
       return NextResponse.json(
@@ -69,13 +73,6 @@ export async function GET(req: NextRequest, { params }: Params) {
         { status: 403 }
       );
     }
-
-    // Fetch all comments for this suggestion
-    const { data: comments, error: commentsError } = await supabase
-      .from("suggestion_comments")
-      .select("id, author_type, author_name, author_email, message, created_at")
-      .eq("suggestion_id", suggestionIdNum)
-      .order("created_at", { ascending: true });
 
     if (commentsError) {
       console.error("Error fetching comments:", commentsError);
@@ -111,11 +108,19 @@ export async function GET(req: NextRequest, { params }: Params) {
 // Add a new comment to a suggestion
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const { trustLinkId, suggestionId } = await params;
-    const body: CreateCommentRequest = await req.json();
-    const { authorType, authorName, authorEmail, message } = body;
+    const rateLimited = applyRateLimit(req, { limit: 60, windowMs: 60 * 60 * 1000, prefix: "comments-create" });
+    if (rateLimited) return rateLimited;
 
-    // Validate required fields
+    const { trustLinkId, suggestionId } = await params;
+    const body = await req.json();
+
+    const parsed = CreateCommentSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
+    }
+    const { authorName, authorEmail, message } = parsed.data;
+
+    // Validate suggestion ID
     const suggestionIdNum = parseInt(suggestionId, 10);
     if (!suggestionId || isNaN(suggestionIdNum)) {
       return NextResponse.json(
@@ -124,52 +129,33 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!authorName?.trim()) {
-      return NextResponse.json(
-        { message: "Author name is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!message?.trim()) {
-      return NextResponse.json(
-        { message: "Message is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate lengths
-    if (authorName.length > 100) {
-      return NextResponse.json(
-        { message: "Author name exceeds maximum length of 100 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (message.length > 2000) {
-      return NextResponse.json(
-        { message: "Message exceeds maximum length of 2000 characters" },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format if provided
-    if (authorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authorEmail)) {
-      return NextResponse.json(
-        { message: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
     const authClient = await createClient();
     const supabase = createServiceClient();
 
-    // Verify the trust instance exists and get the master owner
-    const { data: instance, error: instanceError } = await supabase
-      .from("trust_instances")
-      .select("id, master_id, master_questionnaires!inner(user_id)")
-      .eq("trust_link_id", trustLinkId)
-      .single();
+    // Run all validation queries in parallel (they're independent)
+    const [instanceResult, authResult, suggestionResult] = await Promise.all([
+      supabase
+        .from("trust_instances")
+        .select("id, master_id, master_questionnaires!inner(user_id)")
+        .eq("trust_link_id", trustLinkId)
+        .single(),
+      authClient.auth.getUser(),
+      supabase
+        .from("instance_suggestions")
+        .select(`
+          id,
+          instance_question_id,
+          instance_questions!inner (
+            instance_id
+          )
+        `)
+        .eq("id", suggestionIdNum)
+        .single(),
+    ]);
+
+    const { data: instance, error: instanceError } = instanceResult;
+    const { data: { user } } = authResult;
+    const { data: suggestion, error: suggestionError } = suggestionResult;
 
     if (instanceError || !instance) {
       return NextResponse.json(
@@ -179,24 +165,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     // Derive authorType server-side: authenticated owner = admin, otherwise trust_user
-    const { data: { user } } = await authClient.auth.getUser();
     const masterData = instance.master_questionnaires as { user_id?: string } | null;
     const resolvedAuthorType = (user && masterData?.user_id === user.id)
       ? "admin"
       : "trust_user";
-
-    // Verify the suggestion exists and belongs to this instance
-    const { data: suggestion, error: suggestionError } = await supabase
-      .from("instance_suggestions")
-      .select(`
-        id,
-        instance_question_id,
-        instance_questions!inner (
-          instance_id
-        )
-      `)
-      .eq("id", suggestionIdNum)
-      .single();
 
     if (suggestionError || !suggestion) {
       return NextResponse.json(

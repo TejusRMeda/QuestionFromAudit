@@ -386,7 +386,7 @@ function QuestionsListInner({
       <div className="text-center py-12 px-4">
         <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
-            className="w-8 h-8 text-slate-400"
+            className="w-8 h-8 text-slate-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -432,7 +432,10 @@ function QuestionsListInner({
                   className={`flex flex-col grow space-y-4 cursor-pointer rounded-lg px-1 py-2 transition-all ${
                     isSelected ? "ring-2 ring-[#4A90A4]/30 bg-[#4A90A4]/5" : ""
                   }`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelectQuestion(question)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectQuestion(question); } }}
                 >
                   <span className="text-slate-800 text-2xl font-semibold leading-tight">
                     {question.questionText || getCalculatorConfig(question.answerType?.toLowerCase() || "")?.fallbackTitle || ""}
@@ -448,7 +451,10 @@ function QuestionsListInner({
                 className={`cursor-pointer rounded-lg px-1 py-2 transition-all ${
                   isSelected ? "ring-2 ring-[#4A90A4]/30 bg-[#4A90A4]/5" : ""
                 }`}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelectQuestion(question)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectQuestion(question); } }}
               >
                 <fieldset>
                   <legend>
@@ -512,7 +518,7 @@ function QuestionsListInner({
               <p className="text-lg text-slate-700 font-medium font-roboto-slab mb-1">
                 {question.questionText}
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Suggested by {question.submitterName}
               </p>
             </div>
@@ -532,7 +538,7 @@ function QuestionsListInner({
           : question.suggestionCount;
 
         const metadataLine = (
-          <div className="flex items-center gap-1.5 mb-2 text-slate-400" style={{ fontSize: "0.7rem" }}>
+          <div className="flex items-center gap-1.5 mb-2 text-slate-500" style={{ fontSize: "0.7rem" }}>
             <span className="text-slate-500">
               {question.section || "General"}{question.page ? ` / ${question.page}` : ""}
             </span>

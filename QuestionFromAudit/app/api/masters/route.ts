@@ -1,49 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/libs/supabase/server";
-import crypto from "crypto";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   ParsedQuestion,
   MYPREOP_ITEM_TYPES,
   ITEM_TYPES_REQUIRING_OPTIONS,
   MyPreOpItemType,
 } from "@/types/question";
+import { CreateMasterSchema } from "@/lib/validations/master";
+import { applyRateLimit } from "@/lib/rateLimit";
+import { generateSecureLinkId } from "@/lib/linkId";
 
 interface CreateMasterRequest {
   name: string;
   questions: ParsedQuestion[];
 }
 
-// Generate a cryptographically secure URL-safe random ID
-function generateSecureLinkId(bytes: number = 16): string {
-  return crypto.randomBytes(bytes).toString("base64url");
-}
-
 export async function POST(req: NextRequest) {
   try {
+    const rateLimited = applyRateLimit(req, { limit: 10, windowMs: 60 * 60 * 1000, prefix: "masters-create" });
+    if (rateLimited) return rateLimited;
+
     const body: CreateMasterRequest = await req.json();
-    const { name, questions } = body;
 
-    // Validate input
-    if (!name?.trim()) {
+    const parsed = CreateMasterSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { message: "Questionnaire name is required" },
+        { message: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
-
-    if (!questions || !Array.isArray(questions) || questions.length === 0) {
-      return NextResponse.json(
-        { message: "Questions array is required" },
-        { status: 400 }
-      );
-    }
-
-    if (questions.length > 500) {
-      return NextResponse.json(
-        { message: "Maximum 500 questions allowed" },
-        { status: 400 }
-      );
-    }
+    const { name } = parsed.data;
+    const questions = parsed.data.questions as unknown as ParsedQuestion[];
 
     // Validate each question
     for (let i = 0; i < questions.length; i++) {

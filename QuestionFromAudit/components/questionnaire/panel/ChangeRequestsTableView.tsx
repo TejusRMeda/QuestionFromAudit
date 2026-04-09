@@ -294,7 +294,7 @@ export default function ChangeRequestsTableView({
                   className={
                     statusFilter === status
                       ? "text-white/80"
-                      : "text-slate-400"
+                      : "text-slate-500"
                   }
                 >
                   {counts[status]}
@@ -338,7 +338,7 @@ export default function ChangeRequestsTableView({
         {rows.length > 0 && (
           <div className="relative max-w-sm">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -423,7 +423,7 @@ export default function ChangeRequestsTableView({
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div>
-                          <span className="text-[10px] font-mono text-slate-400">
+                          <span className="text-[10px] font-mono text-slate-500">
                             {row.questionId}
                           </span>
                           <p
@@ -454,7 +454,7 @@ export default function ChangeRequestsTableView({
                         </p>
                         {isExpanded && row.reason && (
                           <div className="mt-2 pt-2 border-t border-slate-100">
-                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
                               Reason
                             </span>
                             <p className="text-xs text-slate-500 mt-0.5">
@@ -463,7 +463,7 @@ export default function ChangeRequestsTableView({
                           </div>
                         )}
                         {isExpanded && (
-                          <div className="mt-2 text-[10px] text-slate-400">
+                          <div className="mt-2 text-[10px] text-slate-500">
                             by {row.submitterName} on{" "}
                             {formatDate(row.createdAt)}
                           </div>
@@ -529,7 +529,7 @@ export default function ChangeRequestsTableView({
         <div className="text-center py-16">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-slate-400"
+              className="w-8 h-8 text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

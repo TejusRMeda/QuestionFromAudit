@@ -1,95 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/libs/supabase/server";
-
-interface ComponentChanges {
-  settings?: {
-    required?: { from: boolean; to: boolean };
-  };
-  content?: {
-    questionText?: { from: string; to: string };
-    answerType?: { from: string; to: string };
-    options?: {
-      added: Array<{ text: string; characteristic: string }>;
-      modified: Array<{ index: number; from: string; to: string }>;
-      removed: number[];
-    };
-  };
-  help?: {
-    hasHelper?: { from: boolean; to: boolean };
-    helperName?: { from: string | null; to: string };
-    helperValue?: { from: string | null; to: string };
-    helperType?: { from: string | null; to: string };
-  };
-  logic?: {
-    description: string;
-  };
-}
-
-interface SuggestionRequest {
-  questionId: number;
-  submitterName: string;
-  submitterEmail?: string | null;
-  suggestionText: string;
-  reason: string;
-  componentChanges?: ComponentChanges;
-}
+import { createServiceClient } from "@/lib/supabase/server";
+import { CreateLegacySuggestionSchema } from "@/lib/validations/suggestion";
 
 export async function POST(req: NextRequest) {
   try {
-    const body: SuggestionRequest = await req.json();
-    const { questionId, submitterName, submitterEmail, suggestionText, reason, componentChanges } = body;
-
-    // Validate required fields
-    if (!questionId) {
-      return NextResponse.json(
-        { message: "Question ID is required" },
-        { status: 400 }
-      );
+    const body = await req.json();
+    const parsed = CreateLegacySuggestionSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
     }
-
-    if (!submitterName?.trim()) {
-      return NextResponse.json(
-        { message: "Name is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!suggestionText?.trim()) {
-      return NextResponse.json(
-        { message: "Suggestion is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!reason?.trim()) {
-      return NextResponse.json(
-        { message: "Reason is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate lengths
-    if (suggestionText.length > 2000) {
-      return NextResponse.json(
-        { message: "Suggestion exceeds 2000 character limit" },
-        { status: 400 }
-      );
-    }
-
-    if (reason.length > 1000) {
-      return NextResponse.json(
-        { message: "Reason exceeds 1000 character limit" },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format if provided
-    if (submitterEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submitterEmail)) {
-      return NextResponse.json(
-        { message: "Invalid email format" },
-        { status: 400 }
-      );
-    }
+    const { questionId, submitterName, submitterEmail, suggestionText, reason, componentChanges } = parsed.data;
 
     const supabase = createServiceClient();
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import DashboardQuestionnaires from "@/components/DashboardQuestionnaires";
 import { Card } from "@/components/ui/card";
 
@@ -15,12 +15,13 @@ interface MasterQuestionnaire {
 
 export default async function QuestionnairesPage() {
   const supabase = await createClient();
+  const serviceClient = createServiceClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: masters } = await supabase
+  const { data: masters } = await serviceClient
     .from("master_questionnaires")
     .select(
       `
@@ -55,7 +56,7 @@ export default async function QuestionnairesPage() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-slate-800">Questionnaires</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Manage your master questionnaire templates</p>
+          <p className="text-sm text-slate-500 mt-0.5">Manage your master questionnaire templates</p>
         </div>
         <Link
           href="/dashboard/upload"

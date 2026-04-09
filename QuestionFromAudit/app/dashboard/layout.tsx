@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/libs/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import config from "@/config";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 

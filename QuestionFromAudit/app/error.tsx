@@ -1,9 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 
-// A simple error boundary to show a nice error page if something goes wrong (Error Boundary)
-// Users can contanct support, go to the main page or try to reset/refresh to fix the error
 export default function Error({
   error,
   reset,
@@ -11,6 +11,9 @@ export default function Error({
   error: Error;
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
   return (
     <>
       <div className="h-screen w-full flex flex-col justify-center items-center text-center gap-6 p-6">
@@ -133,7 +136,9 @@ export default function Error({
           Something went wrong 🥲
         </p>
 
-        <p className="text-red-500">{error?.message}</p>
+        <p className="text-red-500">
+          An unexpected error occurred. Please try again or contact support.
+        </p>
 
         <div className="flex flex-wrap gap-4 justify-center">
           <button className="btn btn-sm" onClick={reset}>

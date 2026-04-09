@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/libs/supabase/server";
-import crypto from "crypto";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { CreateInstanceSchema } from "@/lib/validations/instance";
+import { generateSecureLinkId } from "@/lib/linkId";
 
 interface Params {
   params: Promise<{ adminLinkId: string }>;
@@ -10,16 +11,10 @@ interface CreateInstanceRequest {
   trustName: string;
 }
 
-// Generate a cryptographically secure URL-safe random ID
-function generateSecureLinkId(bytes: number = 16): string {
-  return crypto.randomBytes(bytes).toString("base64url");
-}
-
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { adminLinkId } = await params;
     const body: CreateInstanceRequest = await req.json();
-    const { trustName } = body;
 
     if (!adminLinkId) {
       return NextResponse.json(
@@ -28,12 +23,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!trustName?.trim()) {
+    const parsed = CreateInstanceSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { message: "Trust name is required" },
+        { message: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
+    const { trustName } = parsed.data;
 
     const authClient = await createClient();
     const supabase = createServiceClient();

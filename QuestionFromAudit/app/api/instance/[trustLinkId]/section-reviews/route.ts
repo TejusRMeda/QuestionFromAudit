@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/libs/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { CreateSectionReviewSchema } from "@/lib/validations/instance";
 
 interface Params {
   params: Promise<{ trustLinkId: string }>;
@@ -49,14 +50,15 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { trustLinkId } = await params;
     const body = await req.json();
-    const { sectionName, reviewerName, hasSuggestions } = body;
 
-    if (!sectionName?.trim() || !reviewerName?.trim()) {
+    const parsed = CreateSectionReviewSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { message: "Section name and reviewer name are required" },
+        { message: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
+    const { sectionName, reviewerName, hasSuggestions } = parsed.data;
 
     const supabase = createServiceClient();
 

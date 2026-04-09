@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   EditPanelState,
   EditableQuestion,
@@ -65,6 +65,18 @@ export function useEditPanelState(
   questions: EditableQuestion[]
 ): UseEditPanelStateReturn {
   const [state, setState] = useState<EditPanelState>(INITIAL_EDIT_PANEL_STATE);
+
+  // Load persisted reviewer name from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("qa-reviewer-name");
+      if (saved) {
+        setState((prev) => ({ ...prev, submitterName: saved }));
+      }
+    } catch {
+      // localStorage may be unavailable
+    }
+  }, []);
 
   // Find the selected question
   const selectedQuestion = useMemo(() => {
@@ -204,6 +216,11 @@ export function useEditPanelState(
 
   const setSubmitterName = useCallback((name: string) => {
     setState((prev) => ({ ...prev, submitterName: name }));
+    try {
+      localStorage.setItem("qa-reviewer-name", name);
+    } catch {
+      // localStorage may be unavailable
+    }
   }, []);
 
   const setSubmitterEmail = useCallback((email: string) => {

@@ -120,6 +120,7 @@ export default function SettingsTab({
               <Switch
                 checked={suggestedRequired}
                 onCheckedChange={handleRequiredToggle}
+                aria-label="Toggle required"
               />
             </div>
           </div>

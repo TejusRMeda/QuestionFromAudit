@@ -316,12 +316,13 @@ export default function ContentTab({
           {/* Suggested value */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label className="text-xs">Suggested Type</Label>
+              <Label htmlFor="suggested-answer-type" className="text-xs">Suggested Type</Label>
               {changes?.answerType && (
                 <span className="text-[#4A90A4] text-xs">Modified</span>
               )}
             </div>
             <select
+              id="suggested-answer-type"
               value={suggestedAnswerType || ""}
               onChange={(e) => handleAnswerTypeChange(e.target.value)}
               className={`flex h-8 w-full rounded-lg border bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${

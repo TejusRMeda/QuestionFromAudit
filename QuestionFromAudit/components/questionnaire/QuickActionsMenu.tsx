@@ -183,14 +183,20 @@ export default function QuickActionsMenu({
             Add Question
           </Button>
           {showAddDropdown && (
-            <div className="absolute left-0 top-full mt-1 z-20 bg-white rounded-lg border border-slate-200 shadow-lg py-1 min-w-[180px]">
+            <div
+              className="absolute left-0 top-full mt-1 z-20 bg-white rounded-lg border border-slate-200 shadow-lg py-1 min-w-[180px]"
+              role="menu"
+              onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setShowAddDropdown(false); } }}
+            >
               <button
+                role="menuitem"
                 onClick={() => handleAddNewQuestion("before")}
                 className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
               >
                 Before this question
               </button>
               <button
+                role="menuitem"
                 onClick={() => handleAddNewQuestion("after")}
                 className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
               >

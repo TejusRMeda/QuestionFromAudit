@@ -1,7 +1,7 @@
 "use client";
 
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import SuggestionThreadModal from "./SuggestionThreadModal";
 import ComponentChangesDisplay from "./ComponentChangesDisplay";
@@ -79,12 +79,17 @@ export default function InstanceViewSuggestionsModal({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/instance-questions/${question.id}/suggestions`);
+      const response = await fetch(`/api/instance/${trustLinkId}/suggestions`);
       if (!response.ok) {
         throw new Error("Failed to load suggestions");
       }
       const data = await response.json();
-      setSuggestions(data.suggestions || []);
+      // Filter to only this question's suggestions
+      const questionSuggestions = (data.suggestions || []).filter(
+        (s: Suggestion & { question?: { id?: number } | null }) =>
+          s.question?.id === question.id
+      );
+      setSuggestions(questionSuggestions);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load suggestions");
       toast.error("Failed to load suggestions");
@@ -111,37 +116,13 @@ export default function InstanceViewSuggestionsModal({
 
   return (
     <>
-      <Transition appear show={isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={onClose}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-neutral/50" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-box bg-base-100 p-6 shadow-xl transition-all">
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+        <DialogContent className="w-full sm:max-w-2xl overflow-hidden rounded-box bg-base-100 p-6 shadow-xl" showCloseButton={false}>
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
-                    <Dialog.Title className="text-lg font-semibold">
+                    <DialogTitle className="text-lg font-semibold">
                       Suggestions
-                    </Dialog.Title>
+                    </DialogTitle>
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm btn-square"
@@ -348,12 +329,8 @@ export default function InstanceViewSuggestionsModal({
                       Add Your Suggestion
                     </button>
                   </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
+        </DialogContent>
+      </Dialog>
 
       {/* Thread Modal */}
       <SuggestionThreadModal

@@ -47,7 +47,7 @@ export default function SuggestionsPageClient({ trustGroups }: Props) {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-slate-800">Suggestions</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-500 mt-0.5">
             All suggestions across your questionnaires
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function SuggestionsPageClient({ trustGroups }: Props) {
               />
             </svg>
             <h3 className="text-base font-medium text-slate-500 mb-2">No suggestions yet</h3>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500">
               Suggestions will appear here once trusts start reviewing your questionnaires.
             </p>
           </div>
@@ -99,7 +99,7 @@ export default function SuggestionsPageClient({ trustGroups }: Props) {
                 >
                   <div className="flex items-center gap-3">
                     <svg
-                      className={`w-4 h-4 text-slate-400 transition-transform ${isCollapsed ? "" : "rotate-90"}`}
+                      className={`w-4 h-4 text-slate-500 transition-transform ${isCollapsed ? "" : "rotate-90"}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -109,7 +109,7 @@ export default function SuggestionsPageClient({ trustGroups }: Props) {
                     <span className="text-sm font-semibold text-slate-700">
                       {group.trustName}
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       {group.suggestions.length} suggestion{group.suggestions.length !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -144,14 +144,14 @@ export default function SuggestionsPageClient({ trustGroups }: Props) {
                                 <span className="text-xs font-medium text-slate-700">
                                   {s.submitter_name}
                                 </span>
-                                <span className="text-xs text-slate-400">·</span>
-                                <span className="text-xs text-slate-400">{s.masterName}</span>
+                                <span className="text-xs text-slate-500">·</span>
+                                <span className="text-xs text-slate-500">{s.masterName}</span>
                               </div>
                               <p className="text-sm text-slate-600 truncate">{s.suggestion_text}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs text-slate-400 whitespace-nowrap">
+                            <span className="text-xs text-slate-500 whitespace-nowrap">
                               {timeAgo(s.created_at)}
                             </span>
                             <Link
