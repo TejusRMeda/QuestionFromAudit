@@ -142,9 +142,6 @@ export default function InstanceSuggestionModal({
         {/* Original Question */}
         <div className="bg-slate-50 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Badge className="font-mono text-xs">
-              {question.questionId}
-            </Badge>
             <Badge variant="ghost" className="text-xs">
               {question.category}
             </Badge>

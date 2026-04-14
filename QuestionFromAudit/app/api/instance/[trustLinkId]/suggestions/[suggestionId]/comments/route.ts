@@ -118,7 +118,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (!parsed.success) {
       return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
     }
-    const { authorName, authorEmail, message } = parsed.data;
+    const { authorName, authorEmail, message, isTestSession } = parsed.data;
 
     // Validate suggestion ID
     const suggestionIdNum = parseInt(suggestionId, 10);
@@ -195,6 +195,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         author_name: authorName.trim(),
         author_email: authorEmail?.trim() || null,
         message: message.trim(),
+        // Trust users in a /testing session pass isTestSession=true; admin
+        // comments coming from the dashboard always get false (the flag is
+        // only meaningful for trust_user-authored content).
+        is_test_session: resolvedAuthorType === "trust_user" ? isTestSession : false,
       })
       .select()
       .single();

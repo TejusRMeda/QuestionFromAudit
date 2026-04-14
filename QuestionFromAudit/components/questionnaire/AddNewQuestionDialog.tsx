@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { EditableQuestion } from "@/types/editPanel";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useIsTestSession } from "@/lib/testingSessionContext";
 
 interface AddNewQuestionDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ export default function AddNewQuestionDialog({
   const [questionText, setQuestionText] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const isTestSession = useIsTestSession();
 
   const handleClose = () => {
     setQuestionText("");
@@ -58,8 +60,9 @@ export default function AddNewQuestionDialog({
           body: JSON.stringify({
             instanceQuestionId: anchorQuestion.id,
             submitterName: reviewerName,
-            suggestionText: `Add new question ${position} ${anchorQuestion.questionId}: ${truncated}`,
+            suggestionText: `Add new question ${position} "${anchorQuestion.questionText.slice(0, 50)}": ${truncated}`,
             reason: reason.trim(),
+            isTestSession,
             componentChanges: {
               newQuestion: {
                 position,
@@ -96,10 +99,7 @@ export default function AddNewQuestionDialog({
         <DialogHeader>
           <DialogTitle>Suggest a New Question</DialogTitle>
           <DialogDescription>
-            This question will be suggested {positionLabel}{" "}
-            <span className="font-medium text-slate-700">
-              {anchorQuestion?.questionId}
-            </span>
+            This question will be suggested {positionLabel} the selected question.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-2">

@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         .select(`
           id, question_id, category, question_text, answer_type, answer_options,
           characteristic, section, page, enable_when, has_helper, helper_type,
-          helper_name, helper_value,
+          helper_name, helper_value, required,
           instance_suggestions (count)
         `)
         .eq("instance_id", instance.id)
@@ -121,6 +121,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       helperType: q.helper_type,
       helperName: q.helper_name,
       helperValue: q.helper_value,
+      required: q.required ?? false,
       suggestionCount: q.instance_suggestions?.[0]?.count || 0,
       quickAction: quickActionMap[q.id] || null,
     }));

@@ -287,10 +287,12 @@ export default function DashboardUploadPage() {
         throw new Error(error.message || "Upload failed");
       }
 
-      toast.success("Master questionnaire created successfully!");
+      const data = await response.json();
 
-      // Redirect to questionnaires list
-      router.push("/dashboard/questionnaires");
+      toast.success("Draft questionnaire created! Review and publish when ready.");
+
+      // Redirect to edit workspace for curation
+      router.push(`/dashboard/questionnaires/${data.adminLinkId}/edit`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
       setIsUploading(false);

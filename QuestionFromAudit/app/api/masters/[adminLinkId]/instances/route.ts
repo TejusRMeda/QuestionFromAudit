@@ -69,7 +69,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Fetch master questions
     const { data: masterQuestions, error: questionsError } = await supabase
       .from("master_questions")
-      .select("question_id, category, question_text, answer_type, answer_options, characteristic, section, page, enable_when, has_helper, helper_type, helper_name, helper_value")
+      .select("question_id, category, question_text, answer_type, answer_options, characteristic, section, page, required, enable_when, has_helper, helper_type, helper_name, helper_value")
       .eq("master_id", master.id)
       .order("id", { ascending: true });
 
@@ -115,6 +115,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         characteristic: q.characteristic,
         section: q.section,
         page: q.page,
+        required: q.required ?? false,
         enable_when: q.enable_when,
         has_helper: q.has_helper,
         helper_type: q.helper_type,

@@ -16,6 +16,7 @@ interface Question {
   helperType: string | null;
   helperName: string | null;
   helperValue: string | null;
+  required: boolean;
   suggestionCount: number;
   quickAction: "required" | "delete" | null;
 }

@@ -226,7 +226,6 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 - All files that produce type errors after enabling strict
 
 **Tasks:**
-
 - [x] **2.2.1** Set `"strict": true` in `tsconfig.json`
 - [x] **2.2.2** Run `npx tsc --noEmit` and fix all resulting type errors
 - [x] **2.2.3** Focus especially on: non-null assertions (`user!.id` in `dashboard/page.tsx:79`), untyped Supabase responses, `as any` casts (12+ instances across API routes and components)
@@ -483,14 +482,14 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 **Tasks:**
 
-- [x] **4.1.1** Create `contexts/InstanceContext.tsx` providing instance data, questions, suggestions, section reviews, and mutation callbacks — *Skipped context (unnecessary prop drilling); extracted into 4 hooks instead*
-- [x] **4.1.2** Extract data fetching into a custom hook `hooks/useInstanceData.ts` (modeled after the well-designed `useEditPanelState.ts`). Include AbortController for fetch cancellation
-- [x] **4.1.3** Extract suggestion-related state into `hooks/useInstanceSuggestions.ts`
-- [x] **4.1.4** Extract section review state into `hooks/useSectionReviews.ts`
-- [x] **4.1.5** Extract quick action state into `hooks/useQuickActions.ts`
-- [x] **4.1.6** Refactor the three duplicated `SplitScreenLayout` blocks into a single block where `rightPanel` is selected by a switch/conditional on `demoMode`
-- [x] **4.1.7** Add AbortController to `fetchInstance` and all other fetch calls. Return cleanup functions from useEffect
-- [x] **4.1.8** Target: reduce the page component to ~200-300 lines, composing the extracted hooks and context — *Reduced from 1228 → 834 lines (32% reduction). Further reduction possible by extracting header/tab-bar JSX into subcomponents.*
+- [ ] **4.1.1** Create `contexts/InstanceContext.tsx` providing instance data, questions, suggestions, section reviews, and mutation callbacks
+- [ ] **4.1.2** Extract data fetching into a custom hook `hooks/useInstanceData.ts` (modeled after the well-designed `useEditPanelState.ts`). Include AbortController for fetch cancellation
+- [ ] **4.1.3** Extract suggestion-related state into `hooks/useInstanceSuggestions.ts`
+- [ ] **4.1.4** Extract section review state into `hooks/useSectionReviews.ts`
+- [ ] **4.1.5** Extract quick action state into `hooks/useQuickActions.ts`
+- [ ] **4.1.6** Refactor the three duplicated `SplitScreenLayout` blocks into a single block where `rightPanel` is selected by a switch/conditional on `demoMode`
+- [ ] **4.1.7** Add AbortController to `fetchInstance` and all other fetch calls. Return cleanup functions from useEffect
+- [ ] **4.1.8** Target: reduce the page component to ~200-300 lines, composing the extracted hooks and context
 - [ ] **4.1.9** Also decompose other large page components:
   - `app/review/[linkId]/page.tsx` (609 lines)
   - `app/admin/[adminLinkId]/page.tsx` (422 lines)
@@ -504,10 +503,10 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 **Tasks:**
 
-- [x] **4.2.1** Move `generateSecureLinkId()` from `app/api/masters/route.ts` and `app/api/masters/[adminLinkId]/instances/route.ts` into `lib/linkId.ts`. Import from the shared location
-- [x] **4.2.2** Remove the `ComponentChanges` interface redefinitions in `ComponentChangesDisplay.tsx` -- now imports from `types/editPanel.ts` *(API routes were already using the shared type)*
-- [x] **4.2.3** Consolidate `lib/` and `libs/` into a single `lib/` directory. Move `libs/supabase/` to `lib/supabase/`, `libs/seo.tsx` to `lib/seo.tsx`. Updated ~40 import paths across the codebase
-- [ ] **4.2.4** Remove the `design-explorations/` directory if it's scratch work (11 files) — *Skipped (manual deletion preferred)*
+- [ ] **4.2.1** Move `generateSecureLinkId()` from `app/api/masters/route.ts` and `app/api/masters/[adminLinkId]/instances/route.ts` into `lib/linkId.ts`. Import from the shared location
+- [ ] **4.2.2** Remove the `ComponentChanges` interface redefinitions in `app/api/suggestions/route.ts` and `app/api/instance/[trustLinkId]/suggestions/route.ts` -- import from `types/editPanel.ts`
+- [ ] **4.2.3** Consolidate `lib/` and `libs/` into a single `lib/` directory. Move `libs/supabase/` to `lib/supabase/`, `libs/seo.ts` to `lib/seo.ts`. Update all imports
+- [ ] **4.2.4** Remove the `design-explorations/` directory if it's scratch work (11 files)
 
 ---
 
@@ -521,10 +520,10 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 **Tasks:**
 
-- [x] **4.3.1** Add pagination to the master questionnaires query (10 per page via `?page=` search param)
-- [x] **4.3.2** Lazy-load suggestion counts per trust instance (separate lightweight query instead of deep nesting)
-- [x] **4.3.3** Add Previous/Next pagination UI to the dashboard
-- [x] **4.3.4** Split single 4-level deep join into 4 parallel lightweight queries (masters, trust counts, latest suggestions, total count)
+- [ ] **4.3.1** Add pagination to the master questionnaires query (e.g., 10 per page)
+- [ ] **4.3.2** Lazy-load suggestion counts per trust instance (don't fetch all suggestions upfront)
+- [ ] **4.3.3** Add a "Load more" or pagination UI to the dashboard
+- [ ] **4.3.4** Consider separate API endpoints for dashboard stats vs. full questionnaire lists
 
 ---
 
@@ -539,29 +538,29 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 **Tasks:**
 
-- [x] **5.1.1** `types/question.ts` -- Test `parseEnableWhen()`: *(already covered in csv-validation.test.ts)*
+- [ ] **5.1.1** `types/question.ts` -- Test `parseEnableWhen()`:
   - All operator types (`=`, `<`, `>`, `exists`, `!=`)
   - AND/OR combinators
   - Malformed strings, empty input, missing operators
   - Nested conditions
-- [x] **5.1.2** `types/question.ts` -- Test `groupRowsByQuestion()`: *(already covered in csv-validation.test.ts)*
+- [ ] **5.1.2** `types/question.ts` -- Test `groupRowsByQuestion()`:
   - Normal grouping by LinkId
   - Duplicate IDs, empty rows, missing required fields
   - 500-question stress test
-- [x] **5.1.3** `types/question.ts` -- Test `rowsToQuestion()`: *(already covered in csv-validation.test.ts)*
+- [ ] **5.1.3** `types/question.ts` -- Test `rowsToQuestion()`:
   - All 20+ item types (`string`, `integer`, `decimal`, `boolean`, `choice`, `open-choice`, `date`, `dateTime`, `time`, `text`, `display`, `group`, `quantity`, `attachment`, `reference`, `url`, `coding`, `calculated-bmi`, `calculated-score`, `calculated-days`, `section-header`)
   - Missing optional fields, edge cases for each type
-- [x] **5.1.4** `lib/enableWhen.ts` -- Test `buildCharacteristicMap()`: *(23 tests in enableWhen.test.ts)*
+- [ ] **5.1.4** `lib/enableWhen.ts` -- Test `buildCharacteristicMap()`:
   - Question-level vs option-level characteristics
   - Missing data, empty questions array
-- [x] **5.1.5** `lib/enableWhen.ts` -- Test `translateEnableWhen()`: *(23 tests in enableWhen.test.ts)*
+- [ ] **5.1.5** `lib/enableWhen.ts` -- Test `translateEnableWhen()`:
   - All operator types, readable English output
   - Unknown operators, missing characteristic references
-- [x] **5.1.6** `lib/casod-export.ts` -- Test `consolidateSuggestionsToRows()`: *(26 tests in casod-export.test.ts)*
+- [ ] **5.1.6** `lib/casod-export.ts` -- Test `consolidateSuggestionsToRows()`:
   - Various suggestion combinations
   - Test all 7 helper functions (`formatOptions`, `buildBranchingText`, `buildContentColumn`, etc.)
   - Empty suggestions, suggestions with component changes
-- [x] **5.1.7** `lib/calculators.ts` -- Test BMI computation: *(23 tests in calculators.test.ts)*
+- [ ] **5.1.7** `lib/calculators.ts` -- Test BMI computation:
   - Normal cases, zero height (division by zero), null inputs
   - `parseCalculatorAnswer()` with malformed JSON
   - `getCalculatorConfig()` for unknown calculator types
@@ -575,22 +574,22 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 **Tasks:**
 
-- [x] **5.2.1** Create `.github/workflows/ci.yml` with:
+- [ ] **5.2.1** Create `.github/workflows/ci.yml` with:
   - Trigger on push to `main` and all PRs
   - Node.js setup (match version from `package.json` engines or `.nvmrc`)
   - `npm ci` for clean installs
   - `npm run lint` (ESLint)
   - `npm run test` (Vitest unit tests)
   - `npx tsc --noEmit` (TypeScript type checking)
-- [x] **5.2.2** Add Playwright E2E tests as a separate CI job (slower, can run in parallel)
-- [x] **5.2.3** Add coverage thresholds in `vitest.config.ts`:
+- [ ] **5.2.2** Add Playwright E2E tests as a separate CI job (slower, can run in parallel)
+- [ ] **5.2.3** Add coverage thresholds in `vitest.config.ts`:
   ```typescript
   coverage: {
     thresholds: { lines: 30, branches: 30, functions: 30, statements: 30 }
   }
   ```
   Start low, ratchet up as tests are added
-- [ ] **5.2.4** Block PR merges on test failure (configure branch protection rules) — *Requires GitHub repo admin settings, not code*
+- [ ] **5.2.4** Block PR merges on test failure (configure branch protection rules)
 
 ---
 
@@ -601,18 +600,18 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 **Tasks:**
 
-- [x] **5.3.1** Install Prettier: `npm install -D prettier eslint-config-prettier`
-- [x] **5.3.2** Create `.prettierrc` with project conventions (2-space indent, no trailing commas, etc.)
-- [x] **5.3.3** Install Husky + lint-staged: `npm install -D husky lint-staged && npx husky init`
-- [x] **5.3.4** Configure lint-staged in `package.json`:
+- [ ] **5.3.1** Install Prettier: `npm install -D prettier eslint-config-prettier`
+- [ ] **5.3.2** Create `.prettierrc` with project conventions (2-space indent, no trailing commas, etc.)
+- [ ] **5.3.3** Install Husky + lint-staged: `npm install -D husky lint-staged && npx husky init`
+- [ ] **5.3.4** Configure lint-staged in `package.json`:
   ```json
   "lint-staged": {
     "*.{ts,tsx}": ["prettier --write", "eslint --fix"],
     "*.{json,md,css}": ["prettier --write"]
   }
   ```
-- [x] **5.3.5** Add a custom ESLint config file (`eslint.config.mjs`) extending `next/core-web-vitals`, `next/typescript`, and `prettier` with `no-explicit-any` warn rule
-- [ ] **5.3.6** Run `npx prettier --write .` once to format the entire codebase, commit as a standalone formatting commit — *Deferred: large reformatting commit best done separately*
+- [ ] **5.3.5** Add a custom ESLint config file (`eslint.config.js`) extending `next/core-web-vitals` with additional rules (e.g., `no-explicit-any`)
+- [ ] **5.3.6** Run `npx prettier --write .` once to format the entire codebase, commit as a standalone formatting commit
 
 ---
 
@@ -623,10 +622,10 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 **Tasks:**
 
-- [x] **5.4.1** Create test utilities for API route testing: mock Supabase client, mock Request/Response objects — *(already existed in __tests__/helpers/supabase-mock.ts)*
-- [x] **5.4.2** Test the suggestion POST route: valid input, missing fields, too-long fields, invalid email, missing `instanceQuestionId` — *(8 tests in suggestion-routes.test.ts)*
-- [x] **5.4.3** Test the suggestion PATCH route: valid status change, invalid status, non-existent suggestion — *(6 tests in suggestion-routes.test.ts including auth/ownership checks)*
-- [x] **5.4.4** Test the masters POST route: valid CSV data, duplicate linkIds, empty questions array, 500+ questions — *(already existed in masters-create.test.ts)*
+- [ ] **5.4.1** Create test utilities for API route testing: mock Supabase client, mock Request/Response objects
+- [ ] **5.4.2** Test the suggestion POST route: valid input, missing fields, too-long fields, invalid email, missing `instanceQuestionId`
+- [ ] **5.4.3** Test the suggestion PATCH route: valid status change, invalid status, non-existent suggestion
+- [ ] **5.4.4** Test the masters POST route: valid CSV data, duplicate linkIds, empty questions array, 500+ questions
 - [ ] **5.4.5** Test auth checks on admin endpoints (after 1.3 is implemented): unauthenticated request returns 401, wrong user returns 403
 
 ---
@@ -639,37 +638,44 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 ### 6.1 High Priority Accessibility Fixes
 
-- [x] **6.1.1** **Fix custom tabs ARIA semantics** -- `EditPanel.tsx` and `MobileEditModal.tsx`: Added `role="tablist"`, `role="tab"` + `aria-selected` + `aria-controls`, `role="tabpanel"` + matching IDs
-- [x] **6.1.2** **Fix form label associations** -- Added `htmlFor`/`id` pairs to SuggestionModal (4 fields), added sr-only labels to CommentInput (3 fields)
-- [x] **6.1.3** **Link error messages to form fields** -- Added `aria-invalid` + `aria-describedby` to all inputs in SuggestionModal and CommentInput, with matching IDs on error elements
-- [x] **6.1.4** **Fix toast announcements** -- Added `ariaProps: { role: "alert", "aria-live": "assertive" }` to Toaster in LayoutClient.tsx
+- [ ] **6.1.1** **Fix custom tabs ARIA semantics** -- `EditPanel.tsx` (lines 224-260) and `MobileEditModal.tsx` (lines 265-294): Add `role="tablist"` to container, `role="tab"` + `aria-selected` + `aria-controls` to each button, `role="tabpanel"` + `id` to content area. Or migrate to the existing `components/ui/tabs.tsx` which already uses Base UI Tab primitives with proper ARIA
+- [ ] **6.1.2** **Fix form label associations** -- Add `id` to all form inputs and `htmlFor` to their labels in:
+  - `SuggestionModal.tsx` -- DaisyUI labels missing `htmlFor`/`id`
+  - `SuggestionDetailModal.tsx:256`
+  - `CommentInput.tsx:74-102` -- all inputs use only `placeholder`, no `<label>`
+  - `ContentTab.tsx:572-598` -- new option fields
+  - `QuestionsList.tsx:104-144` -- answer inputs
+  - `CreateTrustModal.tsx` Step1 (line 403), Step2 (line 459)
+  - `dashboard/upload/page.tsx` -- DaisyUI labels
+- [ ] **6.1.3** **Link error messages to form fields** -- For every input with validation errors across `SuggestionModal`, `InstanceSuggestionModal`, `CommentInput`, `ReviewTab`, `ContentTab`, `HelpTab`: set `aria-invalid="true"` on the input, give the error element an `id`, add `aria-describedby={errorId}` to the input
+- [ ] **6.1.4** **Fix toast announcements** -- Configure error toasts to use `ariaProps: { role: "alert", "aria-live": "assertive" }` in the `<Toaster>` config at `LayoutClient.tsx:12`
 
 ---
 
 ### 6.2 Medium Priority Accessibility Fixes
 
-- [x] **6.2.1** **Add skip navigation link** -- Added skip-to-content link + `<main id="main-content">` wrapper in `app/layout.tsx`
-- [x] **6.2.2** **Add `aria-label="Close"` to modal close buttons** -- Added to all 4 modals
-- [x] **6.2.3** **Fix color contrast** -- Replaced `text-slate-400` → `text-slate-500` across 22 files (86 occurrences)
-- [x] **6.2.4** **Make upload drop zone keyboard accessible** -- Added `tabIndex`, `role="button"`, `aria-label`, Enter/Space handler
-- [x] **6.2.5** **Fix patient view question cards** -- Added `role="button"`, `tabIndex={0}`, `onKeyDown` to QuestionsList
-- [x] **6.2.6** **Add `aria-pressed` to custom checkboxes** -- Added to CreateTrustModal Step 3
-- [x] **6.2.7** **Fix QuickActionsMenu keyboard navigation** -- Added `role="menu"`, `role="menuitem"`, Escape handler
-- [x] **6.2.8** **Add live regions for loading states** -- Added `role="status" aria-live="polite"` to ViewSuggestionsModal and ConversationThread
-- [x] **6.2.9** **Fix tab status indicators** -- Added sr-only text for error/changes indicators in EditPanel
-- [x] **6.2.10** **Fix select elements** -- Added `id`/`htmlFor` pairs in ContentTab and HelpTab
-- [x] **6.2.11** **Fix switch toggle labels** -- Added `aria-label` to switches in SettingsTab and HelpTab
-- [x] **6.2.12** **Fix touch target sizes** -- Added `min-w-6 min-h-6` to remove member buttons in CreateTrustModal
+- [ ] **6.2.1** **Add skip navigation link** -- In `app/layout.tsx`, add `<a href="#main-content" className="sr-only focus:not-sr-only ...">Skip to main content</a>` as the first focusable element. Add `id="main-content"` to the `<main>` element
+- [ ] **6.2.2** **Add `aria-label="Close"` to modal close buttons** -- `SuggestionModal.tsx:152`, `ViewSuggestionsModal.tsx:117`, `SuggestionDetailModal.tsx:135`, `SuggestionThreadModal.tsx:257`
+- [ ] **6.2.3** **Fix color contrast** -- Replace `text-slate-400` (3.0:1) with `text-slate-500` or darker for all body text. Audit all `/40` and `/50` opacity modifiers on `text-base-content`
+- [ ] **6.2.4** **Make upload drop zone keyboard accessible** -- `dashboard/upload/page.tsx:352-365`: Add `tabIndex={0}`, `role="button"`, `aria-label`, and `onKeyDown` for Enter/Space
+- [ ] **6.2.5** **Fix patient view question cards** -- `QuestionsList.tsx:428-480`: Add `role="button"`, `tabIndex={0}`, `onKeyDown` (matching the default view pattern)
+- [ ] **6.2.6** **Add `aria-pressed` to custom checkboxes** in `CreateTrustModal.tsx` Step3 (lines 528-551)
+- [ ] **6.2.7** **Fix QuickActionsMenu keyboard navigation** -- `QuickActionsMenu.tsx:185-199`: Add `role="menu"`, `role="menuitem"`, arrow key navigation, Escape to close
+- [ ] **6.2.8** **Add live regions for loading states** -- Wrap loading spinners in `<div role="status" aria-live="polite">` in `ViewSuggestionsModal.tsx:155`, `ConversationThread.tsx:52`, instance page skeleton
+- [ ] **6.2.9** **Fix tab status indicators** -- `EditPanel.tsx:244-256`: Add `<span className="sr-only">Has validation errors</span>` or `<span className="sr-only">Has pending changes</span>` inside each indicator
+- [ ] **6.2.10** **Fix select elements** -- `ContentTab.tsx:324-338` and `HelpTab.tsx:229-239`: Add `id` to `<select>` and `htmlFor` to `<Label>`
+- [ ] **6.2.11** **Fix switch toggle labels** -- `SettingsTab.tsx:120-121` and `HelpTab.tsx:199-200`: Add `aria-label` to switches
+- [ ] **6.2.12** **Fix touch target sizes** -- "Remove member" buttons in `CreateTrustModal.tsx:441-449` (12x12px SVG) need min 24x24px touch target
 
 ---
 
 ### 6.3 Low Priority Accessibility Fixes
 
-- [x] **6.3.1** Add `aria-hidden="true"` to decorative SVGs -- Added to TabIcon (5 SVGs), modal close buttons (4 files), SplitScreenLayout
-- [x] **6.3.2** ResizableDivider ARIA -- Already had `role="separator"`, `aria-orientation`, `aria-label` (no changes needed)
-- [x] **6.3.3** Heading hierarchy -- Already correct: one `<h1>` per page (no changes needed)
-- [x] **6.3.4** Add `aria-live="polite"` to countdown -- Added to CreateTrustModal Step 5
-- [x] **6.3.5** Add `aria-hidden="true"` to mobile back button SVG -- Added to SplitScreenLayout
+- [ ] **6.3.1** Add `aria-hidden="true"` to all decorative SVG icons throughout the codebase
+- [ ] **6.3.2** Add `aria-valuenow`, `aria-valuemin`, `aria-valuemax` to `ResizableDivider.tsx`
+- [ ] **6.3.3** Ensure each page has exactly one `<h1>`, with proper `<h2>` -> `<h3>` hierarchy
+- [ ] **6.3.4** Add `aria-live="polite"` to the auto-close countdown in `CreateTrustModal.tsx` Step 5
+- [ ] **6.3.5** Add `aria-hidden="true"` to the SVG in the mobile back button (`SplitScreenLayout.tsx:149-157`)
 
 ---
 
@@ -679,30 +685,32 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 
 ### 7.1 Fix useEffect / React Rules Violations
 
-- [x] **7.1.1** `SuggestionThreadModal.tsx`: Moved fetchComments inside useEffect, added AbortController cleanup
-- [x] **7.1.2** `CreateTrustModal.tsx`: Wrapped handleDone in useCallback, removed eslint-disable comment
-- [x] **7.1.3** `instance/[trustLinkId]/page.tsx`: Already fixed in Phase 4 (useInstanceData.ts hook with useCallback + AbortController)
-- [x] **7.1.4** `ViewSuggestionsModal.tsx`: Added AbortController to fetch, cleanup on unmount, retryCount state for re-fetch
+- [ ] **7.1.1** `SuggestionThreadModal.tsx:92-96`: Add `fetchComments` to the useEffect dependency array, or wrap `fetchComments` in `useCallback`
+- [ ] **7.1.2** `CreateTrustModal.tsx:78`: Fix the eslint-disable for `react-hooks/exhaustive-deps` -- memoize `handleDone` with `useCallback` instead of suppressing
+- [ ] **7.1.3** `instance/[trustLinkId]/page.tsx`: Wrap `fetchInstance` in `useCallback` and add it to the useEffect dependency array. Add AbortController for cleanup
+- [ ] **7.1.4** `ViewSuggestionsModal.tsx`: Add fetch cancellation to prevent state updates on unmounted components
 
 ---
 
 ### 7.2 Fix Non-Atomic Trust Creation
 
-- [ ] **7.2.1** `CreateTrustModal.tsx:114-147`: The sequential POST loop for creating trust instances has no rollback on partial failure — *Deferred: requires new API endpoint or significant UI changes*
+- [ ] **7.2.1** `CreateTrustModal.tsx:114-147`: The sequential POST loop for creating trust instances has no rollback on partial failure. Either:
+  - Create a single API endpoint that accepts multiple questionnaire IDs and creates all instances in a database transaction, OR
+  - Add error recovery UI showing which instances succeeded/failed with retry options
 
 ---
 
 ### 7.3 Add `maxLength` to Textareas
 
-- [x] **7.3.1** Added `maxLength` to SuggestionModal (suggestion + reason), CommentInput (message), ReviewTab (notes)
-- [x] **7.3.2** Character counts already display as `current/max` format — negative numbers not possible
+- [ ] **7.3.1** Add `maxLength` HTML attribute to all textareas that have character limits: `SuggestionModal.tsx:253`, `CommentInput.tsx:106`, `ReviewTab.tsx:277`
+- [ ] **7.3.2** Ensure the character count display caps at 0 remaining (not negative)
 
 ---
 
 ### 7.4 Persist Reviewer Name
 
-- [x] **7.4.1** Added `localStorage.setItem("qa-reviewer-name", value)` when submitterName changes in useEditPanelState.ts
-- [x] **7.4.2** On initialization, reads from localStorage to pre-fill submitterName
+- [ ] **7.4.1** In `useEditPanelState.ts`, persist `submitterName` to `localStorage` (the quick actions flow already uses `localStorage.getItem("qa-reviewer-name")` but the edit panel does not)
+- [ ] **7.4.2** On hook initialization, read from localStorage to pre-fill the name
 
 ---
 
@@ -713,8 +721,8 @@ These issues don't enable exploitation but cause reliability problems, hide bugs
 | 1. Critical Security | 35 tasks | DONE (2026-04-08) |
 | 2. Stability & Monitoring | 25 tasks | DONE (2026-04-09) |
 | 3. Performance | 25 tasks | DONE (2026-04-09) |
-| 4. Architecture | 15 tasks | DONE (2026-04-09) — 2 tasks deferred (4.1.9, 4.2.4) |
-| 5. Testing Infrastructure | 20 tasks | DONE (2026-04-09) — 2 tasks deferred (5.2.4 branch protection, 5.3.6 prettier format) |
-| 6. Accessibility | 21 tasks | DONE (2026-04-09) — 2 items already correct (6.3.2, 6.3.3) |
-| 7. Miscellaneous | 8 tasks | DONE (2026-04-09) — 1 task deferred (7.2.1 non-atomic trust creation) |
-| **Total** | **~149 tasks** | **~145 done, ~4 deferred** |
+| 4. Architecture | 15 tasks | Not started |
+| 5. Testing Infrastructure | 20 tasks | Not started |
+| 6. Accessibility | 21 tasks | Not started |
+| 7. Miscellaneous | 8 tasks | Not started |
+| **Total** | **~149 tasks** | **~80 done, ~69 remaining** |

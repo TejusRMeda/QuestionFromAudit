@@ -20,11 +20,13 @@
 -- projects
 DROP POLICY IF EXISTS "Allow public read projects" ON projects;
 DROP POLICY IF EXISTS "Allow public insert projects" ON projects;
+DROP POLICY IF EXISTS "Deny direct access to projects" ON projects;
 CREATE POLICY "Deny direct access to projects" ON projects FOR ALL USING (false);
 
 -- questions
 DROP POLICY IF EXISTS "Allow public read questions" ON questions;
 DROP POLICY IF EXISTS "Allow public insert questions" ON questions;
+DROP POLICY IF EXISTS "Deny direct access to questions" ON questions;
 CREATE POLICY "Deny direct access to questions" ON questions FOR ALL USING (false);
 
 -- suggestions
@@ -32,6 +34,7 @@ DROP POLICY IF EXISTS "Allow public read suggestions" ON suggestions;
 DROP POLICY IF EXISTS "Allow public insert suggestions" ON suggestions;
 DROP POLICY IF EXISTS "Allow public update suggestions" ON suggestions;
 DROP POLICY IF EXISTS "Allow public delete suggestions" ON suggestions;
+DROP POLICY IF EXISTS "Deny direct access to suggestions" ON suggestions;
 CREATE POLICY "Deny direct access to suggestions" ON suggestions FOR ALL USING (false);
 
 -- ============================================================
@@ -54,6 +57,7 @@ DROP POLICY IF EXISTS "Allow public insert master_questionnaires" ON master_ques
 
 DROP POLICY IF EXISTS "Allow public read master_questions" ON master_questions;
 DROP POLICY IF EXISTS "Allow public insert master_questions" ON master_questions;
+DROP POLICY IF EXISTS "Deny direct access to master_questions" ON master_questions;
 CREATE POLICY "Deny direct access to master_questions" ON master_questions FOR ALL USING (false);
 
 -- ============================================================
@@ -75,6 +79,7 @@ DROP POLICY IF EXISTS "Allow public update trust_instances" ON trust_instances;
 
 DROP POLICY IF EXISTS "Allow public read instance_questions" ON instance_questions;
 DROP POLICY IF EXISTS "Allow public insert instance_questions" ON instance_questions;
+DROP POLICY IF EXISTS "Deny direct access to instance_questions" ON instance_questions;
 CREATE POLICY "Deny direct access to instance_questions" ON instance_questions FOR ALL USING (false);
 
 -- ============================================================
@@ -86,6 +91,7 @@ DROP POLICY IF EXISTS "Allow public read instance_suggestions" ON instance_sugge
 DROP POLICY IF EXISTS "Allow public insert instance_suggestions" ON instance_suggestions;
 DROP POLICY IF EXISTS "Allow public update instance_suggestions" ON instance_suggestions;
 DROP POLICY IF EXISTS "Allow public delete instance_suggestions" ON instance_suggestions;
+DROP POLICY IF EXISTS "Deny direct access to instance_suggestions" ON instance_suggestions;
 CREATE POLICY "Deny direct access to instance_suggestions" ON instance_suggestions FOR ALL USING (false);
 
 -- ============================================================
@@ -96,6 +102,7 @@ CREATE POLICY "Deny direct access to instance_suggestions" ON instance_suggestio
 DROP POLICY IF EXISTS "Allow public read suggestion_comments" ON suggestion_comments;
 DROP POLICY IF EXISTS "Allow public insert suggestion_comments" ON suggestion_comments;
 DROP POLICY IF EXISTS "Allow public delete suggestion_comments" ON suggestion_comments;
+DROP POLICY IF EXISTS "Deny direct access to suggestion_comments" ON suggestion_comments;
 CREATE POLICY "Deny direct access to suggestion_comments" ON suggestion_comments FOR ALL USING (false);
 
 -- ============================================================
@@ -107,4 +114,5 @@ DROP POLICY IF EXISTS "Allow public read instance_section_reviews" ON instance_s
 DROP POLICY IF EXISTS "Allow public insert instance_section_reviews" ON instance_section_reviews;
 DROP POLICY IF EXISTS "Allow public update instance_section_reviews" ON instance_section_reviews;
 DROP POLICY IF EXISTS "Allow public delete instance_section_reviews" ON instance_section_reviews;
+DROP POLICY IF EXISTS "Deny direct access to instance_section_reviews" ON instance_section_reviews;
 CREATE POLICY "Deny direct access to instance_section_reviews" ON instance_section_reviews FOR ALL USING (false);

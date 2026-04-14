@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { TranslatedEnableWhen } from "@/lib/enableWhen";
+import { CharacteristicSource } from "@/lib/enableWhen";
 import {
   EditableQuestion,
   TabId,
@@ -13,12 +15,22 @@ import {
   ValidationErrors,
 } from "@/types/editPanel";
 import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import EmptyPanelState from "./EmptyPanelState";
 import SettingsTab from "./tabs/SettingsTab";
 import ContentTab from "./tabs/ContentTab";
 import HelpTab from "./tabs/HelpTab";
 import LogicTab from "./tabs/LogicTab";
 import ReviewTab from "./tabs/ReviewTab";
+
+const LogicFlowView = dynamic(() => import("./LogicFlowView"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <span className="loading loading-spinner" />
+    </div>
+  ),
+});
 
 interface EditPanelProps {
   question: EditableQuestion | null;
@@ -50,6 +62,10 @@ interface EditPanelProps {
   onSelectQuestion: (question: EditableQuestion) => void;
   questionIndex: number;
   totalQuestions: number;
+  clinicallyProtectedIds?: Set<number>;
+  protectedCharacteristics?: Set<string>;
+  characteristicMap?: Map<string, CharacteristicSource>;
+  onClose?: () => void;
 }
 
 /**
@@ -82,6 +98,12 @@ function TabIcon({ icon, className }: { icon: string; className?: string }) {
       return (
         <svg className={baseClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      );
+    case "GitBranch":
+      return (
+        <svg className={baseClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 3v12m0 0a3 3 0 103 3 3 3 0 00-3-3zm12-6a3 3 0 10-3 3 3 3 0 003-3zm-3 3V9a3 3 0 00-3-3H9" />
         </svg>
       );
     case "CheckCircle":
@@ -123,8 +145,15 @@ export default function EditPanel({
   onSelectQuestion,
   questionIndex,
   totalQuestions,
+  clinicallyProtectedIds,
+  protectedCharacteristics,
+  characteristicMap,
+  onClose,
 }: EditPanelProps) {
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const isClinicallyRequired = question?.required === true;
+  const isClinicallyProtected = !!(question && clinicallyProtectedIds?.has(question.id));
 
   // Scroll to top when a new question is selected
   useEffect(() => {
@@ -160,6 +189,9 @@ export default function EditPanel({
             changes={changes.content}
             onUpdateChanges={onUpdateContent}
             errors={validationErrors.content}
+            isClinicallyRequired={isClinicallyRequired}
+            isClinicallyProtected={isClinicallyProtected}
+            protectedCharacteristics={protectedCharacteristics}
           />
         );
       case "help":
@@ -180,7 +212,19 @@ export default function EditPanel({
             onUpdateChanges={onUpdateLogic}
             translatedEnableWhen={translatedEnableWhen}
             onSelectQuestion={onSelectQuestion}
+            isClinicallyProtected={isClinicallyProtected}
           />
+        );
+      case "flow":
+        return (
+          <div className="h-[500px]">
+            <LogicFlowView
+              questions={allQuestions}
+              selectedQuestion={question}
+              onSelectQuestion={onSelectQuestion}
+              characteristicMap={characteristicMap || new Map()}
+            />
+          </div>
         );
       case "review":
         return (
@@ -207,13 +251,23 @@ export default function EditPanel({
     <div className="h-full flex flex-col bg-white border-l border-slate-200">
       {/* Question Header */}
       <div className="p-4 border-b border-slate-200 bg-slate-50">
-        <div className="flex items-center gap-2 mb-2">
-          <Badge className="font-mono text-xs">{question.questionId}</Badge>
-          <Badge variant="ghost" className="text-xs">{question.category}</Badge>
-          {question.suggestionCount > 0 && (
-            <Badge variant="info" className="text-xs">
-              {question.suggestionCount} suggestion{question.suggestionCount !== 1 ? "s" : ""}
-            </Badge>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="ghost" className="text-xs">{question.category}</Badge>
+            {question.suggestionCount > 0 && (
+              <Badge variant="info" className="text-xs">
+                {question.suggestionCount} suggestion{question.suggestionCount !== 1 ? "s" : ""}
+              </Badge>
+            )}
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-200 transition-colors"
+              aria-label="Close panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
           )}
         </div>
         <p className="text-sm text-slate-600 line-clamp-2">{question.questionText}</p>

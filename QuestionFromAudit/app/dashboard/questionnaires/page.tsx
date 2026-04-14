@@ -11,6 +11,7 @@ interface MasterQuestionnaire {
   admin_link_id: string;
   created_at: string;
   question_count: number;
+  status: string;
 }
 
 export default async function QuestionnairesPage() {
@@ -29,6 +30,7 @@ export default async function QuestionnairesPage() {
       name,
       admin_link_id,
       created_at,
+      status,
       master_questions(count)
     `
     )
@@ -41,12 +43,14 @@ export default async function QuestionnairesPage() {
       name: string;
       admin_link_id: string;
       created_at: string;
+      status: string;
       master_questions: { count: number }[];
     }) => ({
       id: m.id,
       name: m.name,
       admin_link_id: m.admin_link_id,
       created_at: m.created_at,
+      status: m.status || "published",
       question_count: m.master_questions?.[0]?.count || 0,
     })
   );

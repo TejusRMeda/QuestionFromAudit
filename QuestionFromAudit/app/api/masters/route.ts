@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
         name: name.trim(),
         admin_link_id: adminLinkId,
         user_id: user.id,
+        status: 'draft',
       })
       .select()
       .single();

@@ -180,9 +180,9 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isCreating) onClose(); }}>
-      <DialogContent className="w-full sm:max-w-md bg-white rounded-2xl shadow-xl overflow-hidden p-0" showCloseButton={false}>
+      <DialogContent className="w-full sm:max-w-md bg-white rounded-2xl shadow-xl p-0 flex flex-col max-h-[90vh] gap-0" showCloseButton={false}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
+                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
                   <DialogTitle className="text-base font-semibold text-slate-800">
                     {isAddFormsMode ? `Add Forms to ${initialTrustName}` : "Create New Trust"}
                   </DialogTitle>
@@ -201,7 +201,7 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
                 </div>
 
                 {/* Step indicator */}
-                <div className="px-6 py-4 border-b border-slate-100">
+                <div className="px-6 py-4 border-b border-slate-100 shrink-0">
                   <div className="flex items-center">
                     {STEP_LABELS.map((label, i) => {
                       const stepNum = (i + 1) as Step;
@@ -235,7 +235,7 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
                 </div>
 
                 {/* Step content */}
-                <div className="px-6 py-6 min-h-[200px]">
+                <div className="px-6 py-6 overflow-y-auto flex-1 min-h-0">
                   {step === 1 && (
                     <Step1
                       trustName={trustName}
@@ -284,7 +284,7 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
 
                 {/* Footer */}
                 {step < 5 && (
-                  <div className="flex items-center justify-between px-6 pb-5 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between px-6 pb-5 pt-2 border-t border-slate-100 shrink-0">
                     <div>
                       {step > 1 && step < 4 && (
                         <button
@@ -330,7 +330,7 @@ export default function CreateTrustModal({ isOpen, onClose, onCreated, questionn
                 )}
 
                 {step === 5 && (
-                  <div className="flex justify-end px-6 pb-5 pt-2 border-t border-slate-100">
+                  <div className="flex justify-end px-6 pb-5 pt-2 border-t border-slate-100 shrink-0">
                     <button
                       type="button"
                       onClick={handleDone}

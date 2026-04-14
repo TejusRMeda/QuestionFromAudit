@@ -13,6 +13,8 @@ interface LogicTabProps {
   onUpdateChanges: (changes: Partial<LogicChanges>) => void;
   translatedEnableWhen: TranslatedEnableWhen | null;
   onSelectQuestion: (question: EditableQuestion) => void;
+  /** True when this question is a child of a clinically required parent */
+  isClinicallyProtected?: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ export default function LogicTab({
   onUpdateChanges,
   translatedEnableWhen,
   onSelectQuestion,
+  isClinicallyProtected,
 }: LogicTabProps) {
   // Find parent questions (questions that this question depends on)
   const parentQuestions: EditableQuestion[] = [];
@@ -166,9 +169,6 @@ export default function LogicTab({
                     className="w-full text-left p-2 rounded-lg border border-slate-200 hover:border-[#4A90A4] hover:bg-[#4A90A4]/5 transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Badge variant="ghost" className="font-mono text-xs">
-                        {parent.questionId}
-                      </Badge>
                       <span className="text-sm truncate">{parent.questionText}</span>
                     </div>
                   </button>
@@ -195,9 +195,6 @@ export default function LogicTab({
           {/* Current question */}
           <div className="w-full p-3 rounded-lg border-2 border-[#4A90A4] bg-[#4A90A4]/5">
             <div className="flex items-center gap-2">
-              <Badge variant="primary" className="font-mono text-xs">
-                {question.questionId}
-              </Badge>
               <span className="text-sm font-medium truncate">{question.questionText}</span>
             </div>
           </div>
@@ -229,9 +226,6 @@ export default function LogicTab({
                     className="w-full text-left p-2 rounded-lg border border-slate-200 hover:border-[#4A90A4] hover:bg-[#4A90A4]/5 transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Badge variant="ghost" className="font-mono text-xs">
-                        {child.questionId}
-                      </Badge>
                       <span className="text-sm truncate">{child.questionText}</span>
                     </div>
                   </button>
@@ -247,6 +241,14 @@ export default function LogicTab({
           )}
         </div>
       </div>
+
+      {/* Clinical protection warning */}
+      {isClinicallyProtected && (
+        <div className="rounded-lg border border-violet-300 bg-violet-50 p-3 text-sm text-violet-800">
+          <p className="font-medium">Clinically Protected</p>
+          <p className="text-xs mt-1">This question&apos;s conditional logic links it to a clinically required parent. Changing this logic may disconnect it from the clinical flow.</p>
+        </div>
+      )}
 
       {/* Suggest Logic Change */}
       <div>
