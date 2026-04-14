@@ -169,6 +169,11 @@ export function parseEnableWhen(enableWhenStr: string): EnableWhen | null {
 
   const str = enableWhenStr.trim();
 
+  // "FALSE" in the EnableWhen column means no conditional logic
+  if (str.toUpperCase() === "FALSE") {
+    return null;
+  }
+
   // Determine logic type — look for AND/OR as a whole word or adjacent to parentheses
   const logicMatch = str.match(/\)\s*(AND|OR)\s*\(|\s+(AND|OR)\s+|\s+(AND|OR)\(|\)(AND|OR)\s+/);
   const logic: "AND" | "OR" = logicMatch

@@ -10,4 +10,5 @@ export const CreateCommentSchema = z.object({
     .nullish()
     .transform((v) => v || null),
   message: z.string().trim().min(1, "Message is required").max(2000),
+  isTestSession: z.boolean().optional().default(false),
 });

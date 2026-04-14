@@ -9,6 +9,7 @@ import HelperDisplay from "../HelperDisplay";
 import QuickActionsMenu, { QuickActionType, QuickActionBanner } from "../QuickActionsMenu";
 import { EditableQuestion, QuestionListItem } from "@/types/editPanel";
 import { Badge } from "@/components/ui/badge";
+import { ShieldCheck, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getCalculatorConfig } from "@/lib/calculators";
@@ -34,6 +35,7 @@ interface QuestionsListProps {
   quickActions?: Record<number, QuickActionType>;
   onQuickAction?: (questionId: number, action: QuickActionType) => void;
   onReviewerNameRequired?: () => void;
+  clinicallyProtectedIds?: Set<number>;
 }
 
 /**
@@ -59,6 +61,7 @@ function QuestionsListInner({
   quickActions,
   onQuickAction,
   onReviewerNameRequired,
+  clinicallyProtectedIds,
 }: QuestionsListProps) {
   const isPatientView = viewStyle === "patient";
 
@@ -420,8 +423,11 @@ function QuestionsListInner({
         <div className="flex flex-col space-y-8">
           {filteredQuestions.map((question) => {
             const answerType = question.answerType?.toLowerCase();
-            const isDisplayOnly = answerType === "spacer" || answerType === "content-block" || answerType === "alert" || answerType === "send-button";
+            const isDisplayOnly = answerType === "content-block" || answerType === "alert" || answerType === "send-button";
             const isSelected = selectedQuestionId === question.id;
+
+            // Spacers are visual whitespace — skip entirely
+            if (answerType === "spacer") return null;
 
             // Display/intro items render as plain text blocks
             if (isDisplayOnly) {
@@ -460,7 +466,7 @@ function QuestionsListInner({
                   <legend>
                     <span className="text-slate-800 text-3xl font-semibold leading-tight">
                       {question.questionText || getCalculatorConfig(question.answerType?.toLowerCase() || "")?.fallbackTitle || ""}
-                      {question.required !== false && (
+                      {question.required === true && (
                         <span className="text-xl"> (required)</span>
                       )}
                     </span>
@@ -525,6 +531,9 @@ function QuestionsListInner({
           );
         }
 
+        // Spacers are visual whitespace — skip entirely
+        if (question.answerType?.toLowerCase() === "spacer") return null;
+
         // ── Regular question card ──
         const translatedEnableWhen = translatedEnableWhens.get(question.id);
         const isConditional = !!translatedEnableWhen;
@@ -534,14 +543,34 @@ function QuestionsListInner({
         // When a quick action banner is shown, subtract 1 from displayed suggestion count
         // so the banner itself serves as the indicator for that action
         const displaySuggestionCount = appliedAction
-          ? question.suggestionCount - 1
+          ? Math.max(0, question.suggestionCount - 1)
           : question.suggestionCount;
+
+        const isClinicallyProtected = !!(clinicallyProtectedIds?.has(question.id));
 
         const metadataLine = (
           <div className="flex items-center gap-1.5 mb-2 text-slate-500" style={{ fontSize: "0.7rem" }}>
             <span className="text-slate-500">
               {question.section || "General"}{question.page ? ` / ${question.page}` : ""}
             </span>
+            {question.required && (
+              <>
+                <span>&middot;</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold" title="This question is required by the questionnaire owner and cannot be removed">
+                  <ShieldCheck className="w-3 h-3" aria-hidden="true" />
+                  Required
+                </span>
+              </>
+            )}
+            {!question.required && isClinicallyProtected && (
+              <>
+                <span>&middot;</span>
+                <span className="inline-flex items-center gap-1 text-violet-600 font-semibold" title="This question depends on a clinically required question and cannot be deleted">
+                  <Link2 className="w-3 h-3" aria-hidden="true" />
+                  Clinically Protected
+                </span>
+              </>
+            )}
             {isConditional && (
               <>
                 <span>&middot;</span>
@@ -582,8 +611,9 @@ function QuestionsListInner({
               </div>
             )}
 
-            {/* Answer Inputs */}
-            {(question.answerType || question.answerOptions) && (
+            {/* Answer Inputs — skip for display-only types */}
+            {(question.answerType || question.answerOptions) &&
+              !["spacer", "content-block", "alert", "send-button"].includes(question.answerType?.toLowerCase() || "") && (
               <div
                 className="mb-2 p-2 bg-slate-50 rounded-lg"
                 onClick={(e) => e.stopPropagation()}
@@ -604,6 +634,7 @@ function QuestionsListInner({
                   onAddSuggestion={onAddSuggestion}
                   onAddNewQuestion={onAddNewQuestion}
                   appliedAction={appliedAction || null}
+                  isClinicallyProtected={isClinicallyProtected}
                 />
               ) : (
                 <div />

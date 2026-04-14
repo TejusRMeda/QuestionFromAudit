@@ -27,6 +27,7 @@ interface Suggestion {
   commentCount: number;
   componentChanges: ComponentChanges | null;
   question: Question | null;
+  isTestSession: boolean;
 }
 
 interface SuggestionsData {
@@ -69,6 +70,7 @@ export default function InstanceSuggestionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [hideTestSessions, setHideTestSessions] = useState(true);
 
   // Action modal state
   const [actionModalOpen, setActionModalOpen] = useState(false);
@@ -237,6 +239,7 @@ export default function InstanceSuggestionsPage() {
 
   // Filter suggestions
   const filteredSuggestions = data?.suggestions.filter((s) => {
+    const matchesTestSession = !hideTestSessions || !s.isTestSession;
     const matchesStatus = statusFilter === "all" || s.status === statusFilter;
     const matchesCategory =
       categoryFilter === "all" || s.question?.category === categoryFilter;
@@ -245,8 +248,10 @@ export default function InstanceSuggestionsPage() {
       s.suggestionText.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.question?.questionText.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.submitterName.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesCategory && matchesSearch;
+    return matchesTestSession && matchesStatus && matchesCategory && matchesSearch;
   });
+
+  const testSessionCount = data?.suggestions.filter((s) => s.isTestSession).length || 0;
 
   // Group suggestions by status for stats
   const stats = data
@@ -391,6 +396,23 @@ export default function InstanceSuggestionsPage() {
           </div>
         </div>
 
+        {/* Test-session toggle */}
+        {testSessionCount > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <label htmlFor="hide-test-sessions" className="flex items-center gap-2 cursor-pointer text-sm text-base-content/70">
+              <input
+                id="hide-test-sessions"
+                type="checkbox"
+                checked={hideTestSessions}
+                onChange={(e) => setHideTestSessions(e.target.checked)}
+                className="checkbox checkbox-sm"
+              />
+              Hide test-session suggestions
+              <span className="badge badge-sm badge-ghost">{testSessionCount}</span>
+            </label>
+          </div>
+        )}
+
         {/* Filter summary */}
         {(searchTerm || statusFilter !== "all" || categoryFilter !== "all") && (
           <div className="flex items-center gap-2 mb-4">
@@ -433,6 +455,11 @@ export default function InstanceSuggestionsPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {suggestion.isTestSession && (
+                      <span className="badge badge-sm bg-amber-100 text-amber-800 border-amber-300 font-semibold">
+                        TEST
+                      </span>
+                    )}
                     {suggestion.commentCount > 0 && (
                       <span className="badge badge-sm badge-primary gap-1">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

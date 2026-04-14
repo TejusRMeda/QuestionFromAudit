@@ -5,7 +5,7 @@
  * Supports component-level editing (Settings, Content, Help, Logic) with structured changes.
  */
 
-export type TabId = "settings" | "content" | "help" | "logic" | "review";
+export type TabId = "settings" | "content" | "help" | "logic" | "flow" | "review";
 
 /**
  * Tab configuration for the edit panel
@@ -21,6 +21,7 @@ export const EDIT_PANEL_TABS: TabConfig[] = [
   { id: "content", label: "Content", icon: "PencilSquare" },
   { id: "help", label: "Help", icon: "QuestionMarkCircle" },
   { id: "logic", label: "Logic", icon: "ArrowsRightLeft" },
+  { id: "flow", label: "Flow", icon: "GitBranch" },
   { id: "review", label: "Review", icon: "CheckCircle" },
 ] as const;
 

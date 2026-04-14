@@ -8,6 +8,9 @@ import {
   translateEnableWhen,
   TranslatedEnableWhen,
 } from "@/lib/enableWhen";
+import { TestingSessionProvider } from "@/lib/testingSessionContext";
+import { isHidden } from "@/lib/testingConfig";
+import type { TestingConfig } from "@/types/testing";
 import { EditableQuestion, PhantomQuestion, QuestionListItem } from "@/types/editPanel";
 import { useEditPanelState } from "@/hooks/useEditPanelState";
 import { useInstanceData, InstanceData } from "@/hooks/useInstanceData";
@@ -21,18 +24,8 @@ import { Switch } from "@/components/ui/switch";
 import SplitScreenLayout from "@/components/questionnaire/panel/SplitScreenLayout";
 import QuestionsList, { ViewStyle } from "@/components/questionnaire/panel/QuestionsList";
 import EditPanel from "@/components/questionnaire/panel/EditPanel";
+import UserModePanel from "@/components/questionnaire/panel/UserModePanel";
 import QuestionSuggestionsPanel from "@/components/questionnaire/panel/QuestionSuggestionsPanel";
-const LogicFlowView = dynamic(
-  () => import("@/components/questionnaire/panel/LogicFlowView"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center h-full">
-        <span className="loading loading-spinner" />
-      </div>
-    ),
-  }
-);
 import SectionCardsView from "@/components/questionnaire/panel/SectionCardsView";
 import SuggestionsListView from "@/components/questionnaire/panel/SuggestionsListView";
 import ChangeRequestsTableView from "@/components/questionnaire/panel/ChangeRequestsTableView";
@@ -55,9 +48,24 @@ const UnsavedChangesDialog = dynamic(
 interface InstancePageClientProps {
   trustLinkId: string;
   initialData: InstanceData;
+  /**
+   * True when the viewer is the master owner (account manager). Renders the
+   * full structured EditPanel. False renders the slim UserModePanel built for
+   * trust reviewers. Server pages decide this from auth; testing links always
+   * pass false.
+   */
+  isAdminMode?: boolean;
+  /**
+   * When set, the screen renders in usability-testing mode: controls listed
+   * in `testingConfig.hide` are removed from the UI, and any suggestion or
+   * comment submitted is tagged is_test_session=true via TestingSessionContext.
+   */
+  testingConfig?: TestingConfig;
 }
 
-export default function InstancePageClient({ trustLinkId, initialData }: InstancePageClientProps) {
+export default function InstancePageClient({ trustLinkId, initialData, isAdminMode = false, testingConfig }: InstancePageClientProps) {
+  const isTestSession = !!testingConfig;
+
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -65,8 +73,9 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
   const [pendingQuestionSelection, setPendingQuestionSelection] = useState<EditableQuestion | null>(null);
-  const [demoMode, setDemoMode] = useState<"panel" | "modal" | "logic">("panel");
-  const [viewStyle, setViewStyle] = useState<ViewStyle>("default");
+  const [viewStyle, setViewStyle] = useState<ViewStyle>(
+    testingConfig?.lockedViewStyle === "patient" ? "patient" : "default"
+  );
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"main" | "suggestions" | "change-requests" | "casod-report">("main");
   const [rightPanelMode, setRightPanelMode] = useState<"suggestions" | "edit">("edit");
@@ -100,7 +109,7 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
   const editableQuestions: EditableQuestion[] = useMemo(() => {
     return (instance?.questions || []).map((q) => ({
       ...q,
-      required: false,
+      required: q.required ?? false,
     }));
   }, [instance?.questions]);
 
@@ -275,7 +284,7 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
       const response = await fetch(`/api/instance/${trustLinkId}/suggestions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, isTestSession }),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -366,16 +375,14 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
     );
   }
 
-  // Build the right panel based on demoMode
-  const rightPanel =
-    demoMode === "logic" ? (
-      <LogicFlowView
-        questions={sectionQuestions}
-        selectedQuestion={editPanelState.selectedQuestion}
-        onSelectQuestion={handleSelectQuestion}
-        characteristicMap={characteristicMap}
-      />
-    ) : (isSubmitted || rightPanelMode === "suggestions") && editPanelState.selectedQuestion ? (
+  // Build the right panel:
+  // - Admin viewers get the full structured EditPanel (Settings/Content/Help/Logic/Flow/Review)
+  // - Trust reviewers get the slim UserModePanel (Suggestions + Logic)
+  // Logic is now an in-panel tab in both — there is no longer a top-level
+  // Panel/Modal/Logic toggle.
+  let rightPanel: React.ReactNode;
+  if ((isSubmitted || rightPanelMode === "suggestions") && editPanelState.selectedQuestion) {
+    rightPanel = (
       <QuestionSuggestionsPanel
         question={editPanelState.selectedQuestion}
         trustLinkId={trustLinkId}
@@ -383,7 +390,9 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
         onRefresh={refreshAll}
         onSuggestionDeleted={isSubmitted ? undefined : handleSuggestionDeleted}
       />
-    ) : (
+    );
+  } else if (isAdminMode) {
+    rightPanel = (
       <EditPanel
         question={editPanelState.selectedQuestion}
         allQuestions={sectionQuestions}
@@ -409,29 +418,49 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
         onSelectQuestion={handleSelectQuestion}
         questionIndex={selectedQuestionIndex}
         totalQuestions={sectionQuestions.length}
+        characteristicMap={characteristicMap}
       />
     );
+  } else {
+    rightPanel = (
+      <UserModePanel
+        question={editPanelState.selectedQuestion}
+        allQuestions={sectionQuestions}
+        trustLinkId={trustLinkId}
+        reviewerName={reviewerName}
+        onRefresh={refreshAll}
+        onSuggestionDeleted={isSubmitted ? undefined : handleSuggestionDeleted}
+        onClose={() => editPanelState.selectQuestion(null)}
+        characteristicMap={characteristicMap}
+        onSelectQuestion={handleSelectQuestion}
+        onReviewerNameRequired={() => setNameDialogOpen(true)}
+      />
+    );
+  }
 
   return (
+    <TestingSessionProvider isTestSession={isTestSession}>
     <div className="h-screen bg-[#F8FAFC] flex flex-col overflow-hidden">
       {/* Progress Bar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-2 flex-shrink-0">
-        <div className="max-w-[1800px] mx-auto flex items-center gap-3">
-          <span className="text-xs font-medium text-slate-500">Progress</span>
-          <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-200">
-            <div
-              className="h-full bg-[#4A90A4] rounded-full transition-all duration-500"
-              style={{ width: `${sectionProgress.percent}%` }}
-            />
+      {!isHidden(testingConfig, "progress") && (
+        <div className="bg-white border-b border-slate-200 px-4 py-2 flex-shrink-0">
+          <div className="max-w-[1800px] mx-auto flex items-center gap-3">
+            <span className="text-xs font-medium text-slate-500">Progress</span>
+            <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-200">
+              <div
+                className="h-full bg-[#4A90A4] rounded-full transition-all duration-500"
+                style={{ width: `${sectionProgress.percent}%` }}
+              />
+            </div>
+            <span className="text-xs text-slate-500">
+              <span className="font-semibold text-slate-800">{sectionProgress.suggested}</span> of {sectionProgress.total} reviewed
+              {selectedSection && (
+                <span className="text-slate-500"> in this section</span>
+              )}
+            </span>
           </div>
-          <span className="text-xs text-slate-500">
-            <span className="font-semibold text-slate-800">{sectionProgress.suggested}</span> of {sectionProgress.total} reviewed
-            {selectedSection && (
-              <span className="text-slate-500"> in this section</span>
-            )}
-          </span>
         </div>
-      </div>
+      )}
 
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10 flex-shrink-0">
@@ -476,63 +505,52 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
             </div>
             {selectedSection && activeTab === "main" && !isSubmitted && (
               <div className="flex items-center gap-3">
-                {sectionReviewState.sectionReviews.has(selectedSection) ? (
-                  <button
-                    onClick={() => sectionReviewState.handleUnreviewSection(selectedSection, reviewerName)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Reviewed — Undo
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-1.5">
+                {!isHidden(testingConfig, "mark") && (
+                  sectionReviewState.sectionReviews.has(selectedSection) ? (
                     <button
-                      onClick={() => {
-                        if (!reviewerName) {
-                          setNameDialogOpen(true);
-                          return;
-                        }
-                        sectionReviewState.handleMarkSectionReviewed(selectedSection, currentSectionHasSuggestions, reviewerName);
-                      }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#4A90A4] text-white hover:bg-[#3d7a8c] transition-colors"
+                      onClick={() => sectionReviewState.handleUnreviewSection(selectedSection, reviewerName)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
                     >
-                      {currentSectionHasSuggestions ? "Mark as Reviewed" : "No Changes Needed"}
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Reviewed — Undo
                     </button>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          if (!reviewerName) {
+                            setNameDialogOpen(true);
+                            return;
+                          }
+                          sectionReviewState.handleMarkSectionReviewed(selectedSection, currentSectionHasSuggestions, reviewerName);
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#4A90A4] text-white hover:bg-[#3d7a8c] transition-colors"
+                      >
+                        {currentSectionHasSuggestions ? "Mark as Reviewed" : "No Changes Needed"}
+                      </button>
+                    </div>
+                  )
                 )}
                 <Badge variant="outline" className="border-[#4A90A4] text-[#4A90A4]">
-                  Review Mode
+                  {isTestSession ? "Testing" : isAdminMode ? "Admin" : "Review Mode"}
                 </Badge>
-                <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
-                  {(["panel", "modal", "logic"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => setDemoMode(mode)}
-                      className={`text-xs font-medium px-3 py-1.5 rounded-md transition-all ${
-                        demoMode === mode
-                          ? "bg-white text-[#4A90A4] shadow-sm"
-                          : "text-slate-500 hover:text-slate-800"
-                      }`}
-                    >
-                      {mode === "panel" ? "Panel" : mode === "modal" ? "Modal" : "Logic"}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5">
-                  <span className={`text-xs font-medium ${viewStyle === "default" ? "text-[#4A90A4]" : "text-slate-500"}`}>
-                    Audit
-                  </span>
-                  <Switch
-                    size="sm"
-                    checked={viewStyle === "patient"}
-                    onCheckedChange={(checked) => setViewStyle(checked ? "patient" : "default")}
-                  />
-                  <span className={`text-xs font-medium ${viewStyle === "patient" ? "text-[#4A90A4]" : "text-slate-500"}`}>
-                    Patient Preview
-                  </span>
-                </div>
+                {!isHidden(testingConfig, "style") && !testingConfig?.lockedViewStyle && (
+                  <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5">
+                    <span className={`text-xs font-medium ${viewStyle === "default" ? "text-[#4A90A4]" : "text-slate-500"}`}>
+                      Audit
+                    </span>
+                    <Switch
+                      size="sm"
+                      checked={viewStyle === "patient"}
+                      onCheckedChange={(checked) => setViewStyle(checked ? "patient" : "default")}
+                    />
+                    <span className={`text-xs font-medium ${viewStyle === "patient" ? "text-[#4A90A4]" : "text-slate-500"}`}>
+                      Patient Preview
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -544,38 +562,40 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
         <div className="max-w-[1800px] mx-auto px-4">
           <div className="flex">
             {[
-              { key: "main" as const, label: selectedSection ? "Review" : "Sections" },
-              { key: "suggestions" as const, label: "Suggestions", count: displaySuggestions.length },
-              { key: "change-requests" as const, label: "Change Requests", count: displaySuggestions.length },
-              { key: "casod-report" as const, label: "CASOD Report" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
-                  activeTab === tab.key
-                    ? "border-[#4A90A4] text-[#4A90A4]"
-                    : "border-transparent text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {tab.label}
-                {tab.count && tab.count > 0 ? (
-                  <span className={`text-xs rounded-full px-1.5 py-0.5 ${
+              { key: "main" as const, label: selectedSection ? "Review" : "Sections", hideKey: null },
+              { key: "suggestions" as const, label: "Suggestions", count: displaySuggestions.length, hideKey: "suggestions" as const },
+              { key: "change-requests" as const, label: "Change Requests", count: displaySuggestions.length, hideKey: "changes" as const },
+              { key: "casod-report" as const, label: "CASOD Report", hideKey: "casod" as const },
+            ]
+              .filter((tab) => !tab.hideKey || !isHidden(testingConfig, tab.hideKey))
+              .map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
                     activeTab === tab.key
-                      ? "bg-[#4A90A4]/10 text-[#4A90A4]"
-                      : "bg-slate-100 text-slate-500"
-                  }`}>
-                    {tab.count}
-                  </span>
-                ) : null}
-              </button>
-            ))}
+                      ? "border-[#4A90A4] text-[#4A90A4]"
+                      : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count && tab.count > 0 ? (
+                    <span className={`text-xs rounded-full px-1.5 py-0.5 ${
+                      activeTab === tab.key
+                        ? "bg-[#4A90A4]/10 text-[#4A90A4]"
+                        : "bg-slate-100 text-slate-500"
+                    }`}>
+                      {tab.count}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
           </div>
         </div>
       </div>
 
       {/* Filters — only show when inside a section on review tab */}
-      {selectedSection && activeTab === "main" && (
+      {selectedSection && activeTab === "main" && !isHidden(testingConfig, "filters") && (
         <div className="bg-white border-b border-slate-200 flex-shrink-0">
           <div className="max-w-[1800px] mx-auto px-4 py-3">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -662,7 +682,7 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
               sectionReviews={sectionReviewState.sectionReviews}
               submissionStatus={sectionReviewState.submissionStatus}
             />
-            {!isSubmitted && (
+            {!isSubmitted && !isHidden(testingConfig, "mark") && (
               <div className="max-w-5xl mx-auto px-4 pb-8">
                 <div className="border-2 border-slate-200 rounded-2xl p-5 bg-white">
                   <div className="flex items-center justify-between">
@@ -699,7 +719,7 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
           <SplitScreenLayout
             showRightOnMobile={!!editPanelState.state.selectedQuestionId}
             onMobileBack={() => {
-              if (demoMode !== "logic" && editPanelState.hasChanges()) {
+              if (editPanelState.hasChanges()) {
                 setUnsavedDialogOpen(true);
                 setPendingQuestionSelection(null);
               } else {
@@ -759,7 +779,7 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
         onClose={() => setNameDialogOpen(false)}
       />
 
-      {sectionReviewState.showSubmitDialog && (
+      {sectionReviewState.showSubmitDialog && !isHidden(testingConfig, "mark") && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
             <h2 className="text-lg font-bold text-slate-800 mb-2">Submit Review</h2>
@@ -799,6 +819,7 @@ export default function InstancePageClient({ trustLinkId, initialData }: Instanc
         </div>
       )}
     </div>
+    </TestingSessionProvider>
   );
 }
 

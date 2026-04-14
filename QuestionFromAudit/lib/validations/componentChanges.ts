@@ -17,6 +17,7 @@ const modifiedOptionSchema = z.object({
 
 const settingsChangesSchema = z.object({
   required: z.object({ from: z.boolean(), to: z.boolean() }).optional(),
+  deleteQuestion: z.object({ to: z.union([z.boolean(), z.literal("true"), z.literal("false")]) }).optional(),
 });
 
 const contentChangesSchema = z.object({

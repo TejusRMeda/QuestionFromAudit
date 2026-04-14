@@ -27,10 +27,15 @@ CREATE INDEX IF NOT EXISTS idx_section_reviews_instance ON instance_section_revi
 -- RLS policies for instance_section_reviews
 ALTER TABLE instance_section_reviews ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read instance_section_reviews" ON instance_section_reviews;
 CREATE POLICY "Allow public read instance_section_reviews" ON instance_section_reviews FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert instance_section_reviews" ON instance_section_reviews;
 CREATE POLICY "Allow public insert instance_section_reviews" ON instance_section_reviews FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update instance_section_reviews" ON instance_section_reviews;
 CREATE POLICY "Allow public update instance_section_reviews" ON instance_section_reviews FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete instance_section_reviews" ON instance_section_reviews;
 CREATE POLICY "Allow public delete instance_section_reviews" ON instance_section_reviews FOR DELETE USING (true);
 
 -- Allow public update on trust_instances (for submission_status)
+DROP POLICY IF EXISTS "Allow public update trust_instances" ON trust_instances;
 CREATE POLICY "Allow public update trust_instances" ON trust_instances FOR UPDATE USING (true);

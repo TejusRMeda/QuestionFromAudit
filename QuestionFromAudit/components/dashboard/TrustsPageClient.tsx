@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import CreateTrustModal from "./CreateTrustModal";
+import GenerateTestingLinkModal from "./GenerateTestingLinkModal";
 
 interface TrustInstance {
   id: number;
@@ -75,6 +76,9 @@ export default function TrustsPageClient({ masters, questionnaires }: Props) {
   const [addFormsTrustName, setAddFormsTrustName] = useState("");
   const [addFormsExcludeIds, setAddFormsExcludeIds] = useState<string[]>([]);
   const [deletingTrustId, setDeletingTrustId] = useState<string | null>(null);
+  const [testingModalTarget, setTestingModalTarget] = useState<
+    { trustLinkId: string; trustName: string } | null
+  >(null);
   const router = useRouter();
 
   function handleCreated() {
@@ -292,6 +296,27 @@ export default function TrustsPageClient({ masters, questionnaires }: Props) {
                               <TooltipTrigger asChild>
                                 <button
                                   type="button"
+                                  onClick={() =>
+                                    setTestingModalTarget({
+                                      trustLinkId: form.trustInstance.trust_link_id,
+                                      trustName: form.trustInstance.trust_name,
+                                    })
+                                  }
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-md text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                                  aria-label="Generate testing link"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                  </svg>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Generate testing link</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
                                   onClick={() => handleDeleteTrust(form.adminLinkId, form.trustInstance.trust_link_id, form.trustInstance.trust_name)}
                                   disabled={deletingTrustId === form.trustInstance.trust_link_id}
                                   className="inline-flex items-center justify-center w-8 h-8 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
@@ -337,6 +362,16 @@ export default function TrustsPageClient({ masters, questionnaires }: Props) {
         initialTrustName={addFormsTrustName}
         excludeAdminLinkIds={addFormsExcludeIds}
       />
+
+      {testingModalTarget && (
+        <GenerateTestingLinkModal
+          open={!!testingModalTarget}
+          onOpenChange={(o) => { if (!o) setTestingModalTarget(null); }}
+          trustLinkId={testingModalTarget.trustLinkId}
+          trustName={testingModalTarget.trustName}
+          origin={typeof window !== "undefined" ? window.location.origin : undefined}
+        />
+      )}
     </div>
   );
 }

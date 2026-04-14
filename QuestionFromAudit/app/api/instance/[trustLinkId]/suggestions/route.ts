@@ -40,6 +40,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         created_at,
         instance_question_id,
         component_changes,
+        is_test_session,
         instance_questions!inner (
           id,
           question_id,
@@ -91,6 +92,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       createdAt: s.created_at,
       commentCount: commentCounts[s.id] || 0,
       componentChanges: s.component_changes || null,
+      isTestSession: !!s.is_test_session,
       question: s.instance_questions ? {
         id: s.instance_questions.id,
         questionId: s.instance_questions.question_id,
@@ -134,7 +136,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (!parsed.success) {
       return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
     }
-    const { instanceQuestionId, submitterName, submitterEmail, suggestionText, reason, componentChanges } = parsed.data;
+    const { instanceQuestionId, submitterName, submitterEmail, suggestionText, reason, componentChanges, isTestSession } = parsed.data;
 
     const supabase = createServiceClient();
 
@@ -163,7 +165,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Verify the question belongs to this instance
     const { data: question, error: questionError } = await supabase
       .from("instance_questions")
-      .select("id")
+      .select("id, is_locked")
       .eq("id", instanceQuestionId)
       .eq("instance_id", instance.id)
       .single();
@@ -175,6 +177,18 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
+    // Block deletion suggestions on locked questions
+    if (question.is_locked) {
+      const changes = parsed.data.componentChanges;
+      if (changes?.settings?.deleteQuestion?.to === true ||
+          changes?.settings?.deleteQuestion?.to === "true") {
+        return NextResponse.json(
+          { message: "This question is locked and cannot be suggested for deletion." },
+          { status: 403 }
+        );
+      }
+    }
+
     // Create the suggestion with optional component changes
     const insertData: Record<string, unknown> = {
       instance_question_id: instanceQuestionId,
@@ -183,6 +197,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       suggestion_text: suggestionText.trim(),
       reason: reason.trim(),
       status: "draft",
+      is_test_session: isTestSession,
     };
 
     // Add component_changes if provided

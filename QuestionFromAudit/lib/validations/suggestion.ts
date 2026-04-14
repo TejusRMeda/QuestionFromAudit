@@ -14,6 +14,7 @@ export const CreateSuggestionSchema = z.object({
   suggestionText: z.string().trim().min(1, "Suggestion text is required").max(2000),
   reason: z.string().trim().min(1, "Reason is required").max(1000),
   componentChanges: componentChangesSchema.nullish(),
+  isTestSession: z.boolean().optional().default(false),
 });
 
 export const UpdateSuggestionSchema = z

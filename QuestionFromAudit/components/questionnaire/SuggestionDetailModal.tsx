@@ -135,9 +135,6 @@ export default function SuggestionDetailModal({
                   {/* Question Info */}
                   <div className="bg-base-200 rounded-box p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="badge badge-neutral badge-sm font-mono">
-                        {suggestion.questionId}
-                      </span>
                       <span className="badge badge-ghost badge-sm">
                         {suggestion.category}
                       </span>

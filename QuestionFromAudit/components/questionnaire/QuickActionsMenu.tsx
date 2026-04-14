@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import { useIsTestSession } from "@/lib/testingSessionContext";
 
 export type QuickActionType = "required" | "delete" | "add-before" | "add-after";
 
@@ -24,6 +25,8 @@ interface QuickActionsMenuProps {
   onAddNewQuestion?: (question: EditableQuestion, position: "before" | "after") => void;
   /** Currently applied quick action on this question (disables conflicting buttons) */
   appliedAction?: QuickActionType | null;
+  /** True when this question is a child of a clinically required parent (via enableWhen) */
+  isClinicallyProtected?: boolean;
 }
 
 export default function QuickActionsMenu({
@@ -35,10 +38,12 @@ export default function QuickActionsMenu({
   onAddSuggestion,
   onAddNewQuestion,
   appliedAction,
+  isClinicallyProtected,
 }: QuickActionsMenuProps) {
   const [submitting, setSubmitting] = useState<"required" | "delete" | null>(null);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isTestSession = useIsTestSession();
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -93,6 +98,7 @@ export default function QuickActionsMenu({
             submitterName: reviewerName,
             suggestionText,
             reason,
+            isTestSession,
             ...(componentChanges ? { componentChanges } : {}),
           }),
         }
@@ -127,49 +133,63 @@ export default function QuickActionsMenu({
     onAddNewQuestion?.(question, position);
   };
 
+  // Questions marked required in the CSV are clinically required — they cannot be
+  // deleted or marked as required (they already are). Only allow Add Question and Add Suggestion.
+  const isClinicallyRequired = question.required === true;
+
+  // Display-only types (content-block, spacer, etc.) can't be "required"
+  const isDisplayOnly = ["spacer", "content-block", "alert", "send-button"].includes(question.answerType?.toLowerCase() || "");
+
   // When "delete" is applied, both Mark Required and Delete are inactive
   // When "required" is applied, only Mark Required is inactive
   const isRequiredDisabled = submitting !== null || appliedAction === "required" || appliedAction === "delete";
   const isDeleteDisabled = submitting !== null || appliedAction === "delete";
 
+  // Hide Delete for both clinically required AND clinically protected questions
+  const hideDelete = isClinicallyRequired || isClinicallyProtected;
+
   return (
     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled={isRequiredDisabled}
-        onClick={() => submitQuickAction("required")}
-        className={`gap-1.5 h-7 px-2 text-xs ${
-          isRequiredDisabled && !submitting
-            ? "text-slate-300 cursor-not-allowed"
-            : "text-slate-500 hover:text-[#4A90A4] hover:bg-[#4A90A4]/5"
-        }`}
-      >
-        {submitting === "required" ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <ShieldCheck className="w-3.5 h-3.5" />
-        )}
-        Mark Required
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled={isDeleteDisabled}
-        onClick={() => submitQuickAction("delete")}
-        className={`gap-1.5 h-7 px-2 text-xs ${
-          isDeleteDisabled && !submitting
-            ? "text-slate-300 cursor-not-allowed"
-            : "text-slate-500 hover:text-red-600 hover:bg-red-50"
-        }`}
-      >
-        {submitting === "delete" ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <Trash2 className="w-3.5 h-3.5" />
-        )}
-        Delete
-      </Button>
+      {!isClinicallyRequired && !isDisplayOnly && (
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isRequiredDisabled}
+          onClick={() => submitQuickAction("required")}
+          className={`gap-1.5 h-7 px-2 text-xs ${
+            isRequiredDisabled && !submitting
+              ? "text-slate-300 cursor-not-allowed"
+              : "text-slate-500 hover:text-[#4A90A4] hover:bg-[#4A90A4]/5"
+          }`}
+        >
+          {submitting === "required" ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <ShieldCheck className="w-3.5 h-3.5" />
+          )}
+          Mark Required
+        </Button>
+      )}
+      {!hideDelete && (
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isDeleteDisabled}
+          onClick={() => submitQuickAction("delete")}
+          className={`gap-1.5 h-7 px-2 text-xs ${
+            isDeleteDisabled && !submitting
+              ? "text-slate-300 cursor-not-allowed"
+              : "text-slate-500 hover:text-red-600 hover:bg-red-50"
+          }`}
+        >
+            {submitting === "delete" ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="w-3.5 h-3.5" />
+            )}
+            Delete
+        </Button>
+      )}
       {onAddNewQuestion && (
         <div className="relative" ref={dropdownRef}>
           <Button

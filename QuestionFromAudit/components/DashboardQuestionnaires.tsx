@@ -12,6 +12,7 @@ interface MasterQuestionnaire {
   admin_link_id: string;
   created_at: string;
   question_count: number;
+  status: string;
 }
 
 interface DashboardQuestionnairesProps {
@@ -90,6 +91,7 @@ export default function DashboardQuestionnaires({
           <thead>
             <tr>
               <th>Name</th>
+              <th>Status</th>
               <th>Questions</th>
               <th>Created</th>
               <th></th>
@@ -99,18 +101,34 @@ export default function DashboardQuestionnaires({
             {questionnaires.map((q) => (
               <tr key={q.id} className="hover">
                 <td className="font-medium">{q.name}</td>
+                <td>
+                  {q.status === "draft" ? (
+                    <span className="badge badge-sm badge-ghost text-amber-600 bg-amber-50 border-amber-200">Draft</span>
+                  ) : (
+                    <span className="badge badge-sm badge-ghost text-green-600 bg-green-50 border-green-200">Published</span>
+                  )}
+                </td>
                 <td>{q.question_count}</td>
                 <td className="text-base-content/60">
                   {new Date(q.created_at).toLocaleDateString("en-US")}
                 </td>
                 <td>
                   <div className="flex items-center gap-1">
-                    <Link
-                      href="/dashboard/trusts"
-                      className="btn btn-sm btn-ghost"
-                    >
-                      Manage
-                    </Link>
+                    {q.status === "draft" ? (
+                      <Link
+                        href={`/dashboard/questionnaires/${q.admin_link_id}/edit`}
+                        className="btn btn-sm btn-ghost text-[#4A90A4]"
+                      >
+                        Edit & Publish
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/dashboard/trusts"
+                        className="btn btn-sm btn-ghost"
+                      >
+                        Manage
+                      </Link>
+                    )}
                     <button
                       className="btn btn-sm btn-ghost text-error"
                       onClick={() => setDeleteTarget(q)}

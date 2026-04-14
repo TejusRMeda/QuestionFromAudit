@@ -10,6 +10,7 @@ import HelperDisplay from "@/components/questionnaire/HelperDisplay";
 import ComponentChangesDisplay from "./ComponentChangesDisplay";
 import type { ComponentChanges } from "@/types/editPanel";
 import { formatDate } from "@/lib/utils";
+import { useIsTestSession } from "@/lib/testingSessionContext";
 
 interface Question {
   id: number;
@@ -88,6 +89,7 @@ export default function SuggestionThreadModal({
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const threadContainerRef = useRef<HTMLDivElement>(null);
+  const isTestSession = useIsTestSession();
 
   useEffect(() => {
     if (!isOpen || !suggestion) return;
@@ -146,6 +148,7 @@ export default function SuggestionThreadModal({
             authorName: data.authorName,
             authorEmail: data.authorEmail || null,
             message: data.message,
+            isTestSession,
           }),
         }
       );
@@ -263,9 +266,6 @@ export default function SuggestionThreadModal({
                     {/* Question Header */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="badge badge-neutral badge-sm font-mono">
-                          {suggestion.question.questionId}
-                        </span>
                         <span className="badge badge-ghost badge-sm">
                           {suggestion.question.category}
                         </span>

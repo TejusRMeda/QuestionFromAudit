@@ -15,6 +15,12 @@ interface ContentTabProps {
   changes: ContentChanges | null;
   onUpdateChanges: (changes: Partial<ContentChanges>) => void;
   errors?: string[];
+  /** True when the question itself is required from the CSV */
+  isClinicallyRequired?: boolean;
+  /** True when the question is a child of a clinically required parent */
+  isClinicallyProtected?: boolean;
+  /** Characteristics on required parents that are referenced by children (cannot remove those options) */
+  protectedCharacteristics?: Set<string>;
 }
 
 /**
@@ -25,6 +31,9 @@ export default function ContentTab({
   changes,
   onUpdateChanges,
   errors,
+  isClinicallyRequired,
+  isClinicallyProtected,
+  protectedCharacteristics,
 }: ContentTabProps) {
   const [newOptionText, setNewOptionText] = useState("");
   const [newOptionCharacteristic, setNewOptionCharacteristic] = useState("");
@@ -266,6 +275,20 @@ export default function ContentTab({
         </div>
       )}
 
+      {/* Clinical protection banners */}
+      {isClinicallyRequired && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          <p className="font-medium">Clinically Required Question</p>
+          <p className="text-xs mt-1">You can suggest rewording the question text or options, but the answer type and referenced answer options cannot be changed.</p>
+        </div>
+      )}
+      {isClinicallyProtected && (
+        <div className="rounded-lg border border-violet-300 bg-violet-50 p-3 text-sm text-violet-800">
+          <p className="font-medium">Clinically Protected Question</p>
+          <p className="text-xs mt-1">This question depends on a clinically required question. Content changes are allowed, but consider whether they could affect clinical data collection.</p>
+        </div>
+      )}
+
       {/* Current Question Text */}
       <div>
         <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">
@@ -321,21 +344,28 @@ export default function ContentTab({
                 <span className="text-[#4A90A4] text-xs">Modified</span>
               )}
             </div>
-            <select
-              id="suggested-answer-type"
-              value={suggestedAnswerType || ""}
-              onChange={(e) => handleAnswerTypeChange(e.target.value)}
-              className={`flex h-8 w-full rounded-lg border bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${
-                changes?.answerType ? "border-[#4A90A4] ring-1 ring-[#4A90A4]/20" : "border-input"
-              }`}
-            >
-              <option value="">Select answer type</option>
-              {MYPREOP_ITEM_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
+            {isClinicallyRequired ? (
+              <div className="flex h-8 w-full items-center rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1 text-sm text-slate-500 cursor-not-allowed">
+                {question.answerType || "—"}
+                <span className="ml-auto text-xs text-amber-600">Locked</span>
+              </div>
+            ) : (
+              <select
+                id="suggested-answer-type"
+                value={suggestedAnswerType || ""}
+                onChange={(e) => handleAnswerTypeChange(e.target.value)}
+                className={`flex h-8 w-full rounded-lg border bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ${
+                  changes?.answerType ? "border-[#4A90A4] ring-1 ring-[#4A90A4]/20" : "border-input"
+                }`}
+              >
+                <option value="">Select answer type</option>
+                {MYPREOP_ITEM_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -358,6 +388,7 @@ export default function ContentTab({
                   const isExpanded = expandedOptionIndex === idx;
                   const displayText = modification ? modification.to : option;
                   const displayChar = modification?.toCharacteristic ?? currentCharacteristics[idx];
+                  const isOptionProtected = !!(currentCharacteristics[idx] && protectedCharacteristics?.has(currentCharacteristics[idx]));
 
                   return (
                     <div key={idx}>
@@ -393,18 +424,24 @@ export default function ContentTab({
                             </span>
                           )}
                         </div>
-                        <Button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveOption(idx);
-                          }}
-                          variant={isRemoved ? "ghost" : "outline"}
-                          size="xs"
-                          className={isRemoved ? "" : "border-red-300 text-red-600 hover:bg-red-50"}
-                        >
-                          {isRemoved ? "Undo" : "Remove"}
-                        </Button>
+                        {isOptionProtected ? (
+                          <span className="text-xs text-amber-600 px-1" title="This option is referenced by a conditional question and cannot be removed">
+                            Protected
+                          </span>
+                        ) : (
+                          <Button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveOption(idx);
+                            }}
+                            variant={isRemoved ? "ghost" : "outline"}
+                            size="xs"
+                            className={isRemoved ? "" : "border-red-300 text-red-600 hover:bg-red-50"}
+                          >
+                            {isRemoved ? "Undo" : "Remove"}
+                          </Button>
+                        )}
                       </div>
 
                       {/* Expanded edit form */}

@@ -7,7 +7,7 @@ import ComponentChangesDisplay from "@/components/questionnaire/ComponentChanges
 import SuggestionThreadModal from "@/components/questionnaire/SuggestionThreadModal";
 import type { ComponentChanges } from "@/types/editPanel";
 import { formatDate } from "@/lib/utils";
-import { MessageSquarePlus, Loader2, Trash2 } from "lucide-react";
+import { MessageSquarePlus, Loader2, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Suggestion {
@@ -37,6 +37,7 @@ interface QuestionSuggestionsPanelProps {
   onRefresh: () => void;
   /** Called after a suggestion is deleted so parent can update quickActions state */
   onSuggestionDeleted?: (suggestionId: number, suggestionText: string) => void;
+  onClose?: () => void;
 }
 
 const statusStyles = {
@@ -72,6 +73,7 @@ export default function QuestionSuggestionsPanel({
   onAddSuggestion,
   onRefresh,
   onSuggestionDeleted,
+  onClose,
 }: QuestionSuggestionsPanelProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,13 +160,24 @@ export default function QuestionSuggestionsPanel({
     <div className="h-full flex flex-col bg-white border-l border-slate-200">
       {/* Question Header */}
       <div className="p-4 border-b border-slate-200 bg-slate-50 flex-shrink-0">
-        <div className="flex items-center gap-2 mb-2">
-          <Badge className="font-mono text-xs">{question.questionId}</Badge>
-          <Badge variant="ghost" className="text-xs">{question.category}</Badge>
-          {suggestions.length > 0 && !loading && (
-            <Badge variant="info" className="text-xs">
-              {suggestions.length} suggestion{suggestions.length !== 1 ? "s" : ""}
-            </Badge>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Badge className="font-mono text-xs">{question.questionId}</Badge>
+            <Badge variant="ghost" className="text-xs">{question.category}</Badge>
+            {suggestions.length > 0 && !loading && (
+              <Badge variant="info" className="text-xs">
+                {suggestions.length} suggestion{suggestions.length !== 1 ? "s" : ""}
+              </Badge>
+            )}
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-200 transition-colors"
+              aria-label="Close panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
           )}
         </div>
         <p className="text-sm text-slate-600 line-clamp-2">{question.questionText}</p>

@@ -82,10 +82,10 @@ export default function SettingsTab({
             </p>
           </div>
 
-          {/* Question ID */}
+          {/* Answer Type */}
           <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs text-slate-500 mb-1">Question ID</p>
-            <p className="text-sm font-medium font-mono">{question.questionId}</p>
+            <p className="text-xs text-slate-500 mb-1">Answer Type</p>
+            <p className="text-sm font-medium">{question.answerType}</p>
           </div>
         </div>
       </div>
@@ -99,9 +99,11 @@ export default function SettingsTab({
         {/* Required Toggle */}
         <div
           className={`rounded-lg p-4 border transition-colors ${
-            hasRequiredChange
-              ? "border-[#4A90A4] bg-[#4A90A4]/5"
-              : "border-slate-200 bg-white"
+            currentRequired
+              ? "border-amber-300 bg-amber-50"
+              : hasRequiredChange
+                ? "border-[#4A90A4] bg-[#4A90A4]/5"
+                : "border-slate-200 bg-white"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -109,23 +111,35 @@ export default function SettingsTab({
               <p className="font-medium">Required Field</p>
               <p className="text-sm text-slate-500">
                 {currentRequired
-                  ? "This question must be answered"
+                  ? "This question is clinically required and cannot be changed"
                   : "This question is optional"}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-500">
-                {suggestedRequired ? "Required" : "Optional"}
+                {currentRequired ? "Required" : suggestedRequired ? "Required" : "Optional"}
               </span>
               <Switch
                 checked={suggestedRequired}
                 onCheckedChange={handleRequiredToggle}
+                disabled={currentRequired}
                 aria-label="Toggle required"
               />
             </div>
           </div>
 
-          {hasRequiredChange && (
+          {currentRequired && (
+            <div className="mt-3 pt-3 border-t border-amber-200">
+              <p className="text-xs text-amber-700 flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                This question is marked as clinically required for patient safety and cannot be modified.
+              </p>
+            </div>
+          )}
+
+          {!currentRequired && hasRequiredChange && (
             <div className="mt-3 pt-3 border-t border-slate-200">
               <p className="text-xs text-[#4A90A4] flex items-center gap-1">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
